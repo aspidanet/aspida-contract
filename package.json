@@ -1,0 +1,28 @@
+{
+  "name": "aspida-lsd",
+  "description": "This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.aspidanet.com/Aspida/aspida-contract"
+  },
+  "author": "leo_liu",
+  "license": "MIT",
+  "devDependencies": {
+    "hardhat": "^2.14.0"
+  },
+  "dependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^3.1.7",
+    "dotenv": "^16.0.3",
+    "hardhat-abi-exporter": "^2.10.1",
+    "prettier-plugin-solidity": "^1.1.3"
+  }
+}

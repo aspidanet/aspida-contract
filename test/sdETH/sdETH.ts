@@ -196,10 +196,6 @@ export async function executeAndCalcExpected(sdETH: Contract, preState: State, a
         default:
             break;
     }
-    console.log(`\nrewardRate:----------------`);
-    console.log(`pre rewardRate:        ${preState.rewardRate}`);
-    console.log(`expected rewardRate:   ${expected.rewardRate}`);
-    console.log(`rewardRate:----------------end\n`);
     return expected;
 }
 

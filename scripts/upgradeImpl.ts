@@ -1,31 +1,25 @@
 import { deployments, getNamedAccounts, ethers } from "hardhat";
 
+import { sendTransaction } from "./utils/utils";
+
 async function main() {
     let deploymentsAll = await deployments.all();
-    const proxyAdminContract = await ethers.getContractFactory("ProxyAdminPro");
-    const proxyAdmin = proxyAdminContract.attach(deploymentsAll.ProxyAdmin.address);
+    const ProxyAdmin = await ethers.getContractAt("ProxyAdminPro", deploymentsAll.ProxyAdmin.address);
     delete deploymentsAll.ProxyAdmin;
 
-    const owner = await proxyAdmin.owner();
+    const owner = await ProxyAdmin.owner();
     const deployer = (await getNamedAccounts()).deployer;
-    const sendStatus = owner == deployer;
+    const send = owner == deployer;
 
     await Promise.all(
         Object.keys(deploymentsAll).map(async (contractName) => {
             if (contractName.slice(-4) == "Impl") {
                 const proxyAddress = deploymentsAll[contractName.slice(0, -4)].address;
                 const implAddress = deploymentsAll[contractName].address;
-                const currentImplAddress = await proxyAdmin.getProxyImplementation(proxyAddress);
+                const currentImplAddress = await ProxyAdmin.getProxyImplementation(proxyAddress);
                 if (implAddress != currentImplAddress) {
-                    if (sendStatus) {
-                        await proxyAdmin.upgrade(proxyAddress, implAddress);
-                        return;
-                    }
-
-                    const data = proxyAdmin.interface.encodeFunctionData("upgrade", [proxyAddress, implAddress]);
                     console.log(`${contractName.slice(0, -4)} upgrade implementation\n`);
-                    console.log(`target address: \n${proxyAdmin.address}\n`);
-                    console.log(`transaction data: \n${data}\n\n`);
+                    await sendTransaction(ProxyAdmin, "upgrade", [proxyAddress, implAddress], send);
                 }
             }
         })

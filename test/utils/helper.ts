@@ -22,7 +22,7 @@ export async function increaseTime(time: number) {
 }
 
 // Mine blocks manually.
-export async function mineManually(passBlocks: number) {
+export async function mineManually(passBlocks: number, time: number) {
     await increaseBlock(passBlocks);
     await increaseTime(passBlocks);
 }

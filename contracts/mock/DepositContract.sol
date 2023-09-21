@@ -11,6 +11,9 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+
+import "../library/Manable.sol";
 import "../library/TransferHelper.sol";
 
 // This interface is designed to be compatible with the Vyper version.
@@ -57,7 +60,7 @@ interface ERC165 {
 // It tries to stay as close as possible to the original source code.
 /// @notice This is the Ethereum 2.0 deposit contract interface.
 /// For more information see the Phase 0 specification under https://github.com/ethereum/eth2.0-specs
-contract DepositContract is IDepositContract, ERC165 {
+contract DepositContract is IDepositContract, ERC165, Ownable2StepUpgradeable, Manable {
     using TransferHelper for address;
     uint constant DEPOSIT_CONTRACT_TREE_DEPTH = 32;
     // NOTE: this also ensures `deposit_count` will fit into 64-bits
@@ -72,6 +75,11 @@ contract DepositContract is IDepositContract, ERC165 {
         // Compute hashes in empty sparse Merkle tree
         for (uint height = 0; height < DEPOSIT_CONTRACT_TREE_DEPTH - 1; height++)
             zero_hashes[height + 1] = sha256(abi.encodePacked(zero_hashes[height], zero_hashes[height]));
+        initialize();
+    }
+
+    function initialize() public initializer {
+        __Ownable2Step_init();
     }
 
     function get_deposit_root() external view override returns (bytes32) {
@@ -174,7 +182,27 @@ contract DepositContract is IDepositContract, ERC165 {
         ret[7] = bytesValue[0];
     }
 
-    function takeOut(address _receiver, uint256 _amount) external {
+    /**
+     * @notice Adds a new manager.
+     * @param _manager The address of the manager to be added.
+     * @dev If the manager has not been added before, emits a `ManagerAdded` event.
+     * @notice This function can only be called by the contract owner.
+     */
+    function _addManager(address _manager) external onlyOwner {
+        _addManagerInternal(_manager);
+    }
+
+    /**
+     * @notice Removes a manager.
+     * @param _manager The address of the manager to be removed.
+     * @dev If the manager is currently a manager, emits a `ManagerRemoved` event.
+     * @notice This function can only be called by the contract owner.
+     */
+    function _removeManager(address _manager) external onlyOwner {
+        _removeManagerInternal(_manager);
+    }
+
+    function takeOut(address _receiver, uint256 _amount) external onlyManager {
         _receiver.safeTransferETH(_amount);
     }
 }

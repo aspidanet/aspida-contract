@@ -198,7 +198,7 @@ contract CorePrimary is
      */
     function _setRewardOracle(address _rewardOracle) external onlyOwner {
         require(
-            _rewardOracle != rewardOracle_ && IRewardOracle(_rewardOracle).CORE() == address(this),
+            _rewardOracle != rewardOracle_ && IRewardOracle(_rewardOracle).core() == address(this),
             "_setRewardOracle: Invalid reward oracle address"
         );
         rewardOracle_ = _rewardOracle;
@@ -272,7 +272,7 @@ contract CorePrimary is
      */
     function _submit(address _receiver) internal override whenNotPaused nonReentrant {
         uint256 _ethValue = msg.value;
-        _checkActionLimit(Action.submit, block.timestamp / 1 days, _ethValue, submitted_ + _ethValue);
+        _checkActionLimit(Action.submit, block.timestamp / 1 days, _ethValue, submitted_);
         _increaseReservesByRatio(_ethValue);
         Submit._submit(_receiver);
     }
@@ -292,7 +292,7 @@ contract CorePrimary is
             Action.withdraw,
             block.timestamp / 1 days,
             _amount,
-            totalWithdrawn_ + pendingClaimAmount_ + _amount
+            totalWithdrawn_ + pendingClaimAmount_ + totalClaimed_
         );
         DETH.burnFrom(_sender, _amount);
         WithdrawalQueue._withdraw(_sender, _receiver, _amount);
@@ -412,7 +412,12 @@ contract CorePrimary is
      * @return The remaining amount of ETH that can be withdrawn for the current day.
      */
     function withdrawRemaining() external view returns (uint256) {
-        return actionRemaining(Action.withdraw, block.timestamp / 1 days, totalWithdrawn_ + pendingClaimAmount_);
+        return
+            actionRemaining(
+                Action.withdraw,
+                block.timestamp / 1 days,
+                totalWithdrawn_ + pendingClaimAmount_ + totalClaimed_
+            );
     }
 
     /**

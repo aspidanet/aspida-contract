@@ -2,5 +2,5 @@
 pragma solidity 0.8.10;
 
 interface IRewardOracle {
-    function CORE() external view returns (address);
+    function core() external view returns (address);
 }

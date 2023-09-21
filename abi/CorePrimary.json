@@ -939,19 +939,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "availableDepositStrategy",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "_availableDepositStrategy",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -1028,6 +1015,35 @@
         "internalType": "struct WithdrawalQueue.Claim",
         "name": "",
         "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_account",
+        "type": "address"
+      }
+    ],
+    "name": "claimDataByAddress",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_ids",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_claimAmounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "_claimStatuses",
+        "type": "bool[]"
       }
     ],
     "stateMutability": "view",
@@ -1407,37 +1423,6 @@
         "internalType": "address[]",
         "name": "_strategists",
         "type": "address[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_strategy",
-        "type": "address"
-      }
-    ],
-    "name": "strategyData",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "earning",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "debt",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct CoreStrategy.StrategyData",
-        "name": "",
-        "type": "tuple"
       }
     ],
     "stateMutability": "view",

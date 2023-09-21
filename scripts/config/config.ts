@@ -18,18 +18,18 @@ export const deployInfo = {
     goerli: {
         DepositContract: "0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b",
         CorePrimary: {
-            reserveRatio: "0.1",
+            reserveRatio: "0",
             treasuryRatio: "0.01",
             actionControl: {
                 submit: {
                     actionId: 0,
-                    limit: "100",
+                    limit: "3",
                     threshold: "0",
                 },
                 withdraw: {
                     actionId: 1,
-                    limit: "10",
-                    threshold: "0.01",
+                    limit: "6",
+                    threshold: "0",
                 },
             },
 
@@ -38,6 +38,8 @@ export const deployInfo = {
         strategy: {
             Lido: {
                 stETH: "0x1643E812aE58766192Cf7D2Cf9567dF2C37e9B7F",
+                mintCap: "3",
+                receiver: "0x95140D3e9dBfF38826eD13C4aFb23a40C97B0F0D",
             },
         },
     },

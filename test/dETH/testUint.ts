@@ -10,15 +10,15 @@ describe("Test dETH unit test", () => {
     let pauseGuardian: Signer;
     let accounts: Signer[];
 
-    let DepositContract: Contract;
     let dETH: Contract;
-    let sdETH: Contract;
-    let CorePrimary: Contract;
-    let RewardOracle: Contract;
 
     async function init() {
-        ({ owner, manager, pauseGuardian, accounts, DepositContract, dETH, sdETH, CorePrimary, RewardOracle } =
-            await fixtureDefault());
+        const initData = await fixtureDefault();
+        owner = initData.owner;
+        manager = initData.manager;
+        pauseGuardian = initData.pauseGuardian;
+        accounts = initData.accounts;
+        dETH = initData.dETH;
     }
 
     before(async function () {

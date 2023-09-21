@@ -64,6 +64,8 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
         __ERC20Permit_init(_tokenName);
         __ERC4626_init(_dETH);
         _setDurationInternal(1 weeks);
+        _updateReward(block.timestamp);
+        _updatePeriodFinish(1 weeks);
     }
 
     /**
@@ -97,7 +99,7 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
     }
 
     /**
-     * @dev Sets the duration of the reward period.
+     * @dev Sets the duration of the next reward period.
      * @param _duration The duration of the reward period.
      */
     function _setDuration(uint256 _duration) external onlyOwner {
@@ -107,12 +109,12 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
     /**
      * @dev Speeds up the reward rate.
      * @param _reward The amount of the reward.
-     * @param _duration The duration of the reward period.
+     * @param _duration Reward for temporary duration. The next period is `duration_`.
      */
     function _speedUpReward(uint256 _reward, uint256 _duration) external onlyOwner sync {
         require(_duration > 0, "_speedUpReward: Invalid duration");
         require(_reward <= _availableReward(), "_speedUpReward: Invalid reward");
-        _updateRewardRate(_remainingReward() + _reward, _duration);
+        _updateRewardRate(_reward, _duration);
         _updatePeriodFinish(_duration);
     }
 
@@ -152,8 +154,10 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
      * @param _timestamp The current timestamp.
      */
     function _updateReward(uint256 _timestamp) internal {
-        totalAssets_ += _rewardAmountByTime(_timestamp);
-        emit UpdateTotalAssets(totalAssets_);
+        if (totalSupply() > 0) {
+            totalAssets_ += _rewardAmountByTime(_timestamp);
+            emit UpdateTotalAssets(totalAssets_);
+        }
 
         lastUpdateTime_ = _timestamp;
         emit UpdateLastUpdateTime(_timestamp);
@@ -173,13 +177,6 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
      */
     function _availableReward() internal view returns (uint256) {
         return IERC20Upgradeable(asset()).balanceOf(address(this)) - totalAssets_;
-    }
-
-    /**
-     * @dev Returns the remaining reward.
-     */
-    function _remainingReward() internal view returns (uint256 _remaining) {
-        if (lastUpdateTime_ < periodFinish_) _remaining = (periodFinish_ - lastUpdateTime_) * rewardRate_;
     }
 
     /**
@@ -332,10 +329,18 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
     }
 
     /**
+     * @dev Returns the available reward.
+     */
+    function availableReward() external view returns (uint256) {
+        return _availableReward();
+    }
+
+    /**
      * @dev Returns the total assets in the pool, including any accrued rewards.
      */
-    function totalAssets() public view override returns (uint256) {
-        return totalAssets_ + _rewardAmountByTime(block.timestamp);
+    function totalAssets() public view override returns (uint256 _totalAssets) {
+        _totalAssets = totalAssets_;
+        if (totalSupply() > 0) _totalAssets += _rewardAmountByTime(block.timestamp);
     }
 
     /**

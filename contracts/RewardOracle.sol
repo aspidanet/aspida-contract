@@ -22,7 +22,7 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
 
     uint256 internal constant DEPOSIT_SIZE = 32 ether; // The deposit size for validators
 
-    ICore internal immutable CORE_; // The interface for the core contract
+    ICore internal immutable CORE; // The interface for the core contract
 
     uint256 internal interestRateLimitPerEpoch_; // The interest rate limit per epoch
     uint256 internal validatorLimitPerEpoch_; // The validator limit per epoch
@@ -57,7 +57,7 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
      * @param _core The interface for the core contract
      */
     constructor(ICore _core) {
-        CORE_ = _core;
+        CORE = _core;
         initialize();
     }
 
@@ -243,15 +243,15 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
         uint256 _rewardIncrement
     ) external whenNotPaused onlyManager {
         _updateEpochReward(_epochId, _activatedValidatorCount, _rewardIncrement);
-        CORE_.supplyReward(_rewardIncrement);
+        CORE.supplyReward(_rewardIncrement);
     }
 
     /**
      * @notice Get the CORE contract.
      * @return The CORE contract.
      */
-    function CORE() external view returns (ICore) {
-        return CORE_;
+    function core() external view returns (ICore) {
+        return CORE;
     }
 
     /**

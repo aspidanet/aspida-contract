@@ -17,15 +17,19 @@ describe("Test RewardOracle unit test", () => {
     let pauseGuardian: Signer;
     let accounts: Signer[];
 
-    let DepositContract: Contract;
     let dETH: Contract;
     let sdETH: Contract;
-    let CorePrimary: Contract;
     let RewardOracle: Contract;
 
     async function init() {
-        ({ owner, manager, pauseGuardian, accounts, DepositContract, dETH, sdETH, CorePrimary, RewardOracle } =
-            await fixtureDefault());
+        const initData = await fixtureDefault();
+        owner = initData.owner;
+        manager = initData.manager;
+        pauseGuardian = initData.pauseGuardian;
+        accounts = initData.accounts;
+        dETH = initData.dETH;
+        sdETH = initData.sdETH;
+        RewardOracle = initData.RewardOracle;
     }
 
     async function calculateEpochCount(epochId: BigNumber) {

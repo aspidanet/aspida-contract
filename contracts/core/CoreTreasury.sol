@@ -33,7 +33,7 @@ abstract contract CoreTreasury {
      * @param _treasury The address of the treasury.
      */
     function _setTreasuryInternal(address _treasury) internal {
-        require(_treasury != address(0) && _treasury != treasury_, "_setTreasuryInternal: Cannot set the same value");
+        require(_treasury != address(0) && _treasury != treasury_, "_setTreasuryInternal: Invalid treasury");
         treasury_ = _treasury;
         emit SetTreasury(_treasury);
     }

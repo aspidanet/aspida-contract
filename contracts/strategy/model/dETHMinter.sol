@@ -95,6 +95,14 @@ abstract contract dETHMinter {
     }
 
     /**
+     * @dev External function to get the receiver address
+     * @return The address of the receiver
+     */
+    function receiver() external view returns (address) {
+        return receiver_;
+    }
+
+    /**
      * @dev External function to get the deposit asset address
      * @return The address of the deposit asset
      */

@@ -113,7 +113,7 @@ abstract contract ActionControl {
      * @param _amount The amount to check against the threshold
      */
     function _checkActionThreshold(ActionData storage _actionData, uint256 _amount) internal view {
-        require(_amount >= _actionData.threshold, "_withdraw: Amount is below the withdrawal limit");
+        require(_amount >= _actionData.threshold, "_checkActionThreshold: Amount exceeds threshold");
     }
 
     /**

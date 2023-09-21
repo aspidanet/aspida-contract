@@ -23,14 +23,6 @@ abstract contract CoreStrategy {
     /// @dev EnumerableSet of strategists
     EnumerableSet.AddressSet internal strategists_;
 
-    struct StrategyData {
-        // Strategy earning
-        uint256 earning;
-        // Strategy debt
-        uint256 debt;
-    }
-    mapping(address => StrategyData) internal strategyData_;
-
     /**
      * @dev Emitted when "reserveRatio_" has changed.
      */
@@ -158,10 +150,7 @@ abstract contract CoreStrategy {
         uint256 _ethAmount
     ) internal virtual isStrategy(_strategy) {
         _decreaseStrategyReserve(_ethAmount);
-
-        uint256 _newDepositStrategy = depositStrategy_ + _ethAmount;
-        depositStrategy_ = _newDepositStrategy;
-
+        depositStrategy_ += _ethAmount;
         IStrategy(_strategy).strategyReceive{ value: _ethAmount }();
         emit DepositToStrategy(_strategy, _ethAmount);
     }
@@ -176,49 +165,6 @@ abstract contract CoreStrategy {
         _increaseStrategyReserve(_ethValue);
         receiveStrategy_ += _ethValue;
         emit ReceiveFromStrategy(_strategy, _ethValue);
-    }
-
-    /**
-     * @notice Update the strategy data for the specified strategy.
-     * @dev This function updates the earning and debt data for the specified strategy.
-     * @param _strategy The address of the strategy to update data for.
-     * @param _earning The new earning value for the strategy.
-     * @param _debt The new debt value for the strategy.
-     */
-    function _updateStrategyData(
-        address _strategy,
-        uint256 _earning,
-        uint256 _debt
-    ) internal virtual isStrategy(_strategy) {
-        StrategyData storage _strategyData = strategyData_[_strategy];
-
-        _strategyData.earning = _earning;
-        emit SetStrategyEarning(_strategy, _earning);
-
-        _strategyData.debt = _debt;
-        emit SetStrategyDebt(_strategy, _debt);
-    }
-
-    /**
-     * @notice Set the earning value for the specified strategy.
-     * @dev This function sets the earning value for the specified strategy.
-     * @param _strategy The address of the strategy to set earning for.
-     * @param _earning The new earning value for the strategy.
-     */
-    function _setStrategyEarning(address _strategy, uint256 _earning) internal virtual isStrategy(_strategy) {
-        strategyData_[_strategy].earning = _earning;
-        emit SetStrategyEarning(_strategy, _earning);
-    }
-
-    /**
-     * @notice Set the debt value for the specified strategy.
-     * @dev This function sets the debt value for the specified strategy.
-     * @param _strategy The address of the strategy to set debt for.
-     * @param _debt The new debt value for the strategy.
-     */
-    function _setStrategyDebt(address _strategy, uint256 _debt) internal virtual isStrategy(_strategy) {
-        strategyData_[_strategy].debt = _debt;
-        emit SetStrategyDebt(_strategy, _debt);
     }
 
     /**
@@ -259,23 +205,5 @@ abstract contract CoreStrategy {
      */
     function strategists() external view returns (address[] memory _strategists) {
         _strategists = strategists_.values();
-    }
-
-    /**
-     * @notice Get the strategy data for the specified strategy.
-     * @param _strategy The address of the strategy.
-     * @return The strategy data.
-     */
-    function strategyData(address _strategy) external view returns (StrategyData memory) {
-        return strategyData_[_strategy];
-    }
-
-    /**
-     * @notice Get the available deposit strategy.
-     * @return _availableDepositStrategy The available deposit strategy.
-     */
-    function availableDepositStrategy() external view returns (uint256 _availableDepositStrategy) {
-        if (strategyReserve_ + receiveStrategy_ > depositStrategy_)
-            _availableDepositStrategy = strategyReserve_ + receiveStrategy_ - depositStrategy_;
     }
 }

@@ -33,6 +33,7 @@ export async function deployProxy(contractName: string, constructorArgs: any[], 
 export async function fixtureDefault() {
     // Get all accounts
     const [owner, manager, pauseGuardian, minter, ...accounts] = await ethers.getSigners();
+    const ownerAddr = await owner.getAddress();
     const managerAddr = await manager.getAddress();
     const pauseGuardianAddr = await pauseGuardian.getAddress();
     const minterAddr = await minter.getAddress();
@@ -53,6 +54,14 @@ export async function fixtureDefault() {
     );
     const { contract: RewardOracle } = await deployProxy("RewardOracle", [CorePrimary.address], "initialize()", []);
 
+    const { contract: MockstETH } = await deployProxy("MockstETH", [], "initialize()", []);
+    const { contract: StETHMinter } = await deployProxy(
+        "StETHMinter",
+        [dETH.address, MockstETH.address],
+        "initialize()",
+        []
+    );
+
     await dETH._addPauseGuardian(pauseGuardianAddr);
     await dETH._addManager(CorePrimary.address);
     await dETH._addManager(managerAddr);
@@ -66,6 +75,10 @@ export async function fixtureDefault() {
     await RewardOracle._addPauseGuardian(pauseGuardianAddr);
     await RewardOracle._addManager(managerAddr);
 
+    await MockstETH._addManager(ownerAddr);
+
+    await StETHMinter._addPauseGuardian(pauseGuardianAddr);
+
     return {
         owner,
         manager,
@@ -76,5 +89,7 @@ export async function fixtureDefault() {
         sdETH,
         CorePrimary,
         RewardOracle,
+        MockstETH,
+        StETHMinter,
     };
 }

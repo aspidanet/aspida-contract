@@ -311,6 +311,20 @@ abstract contract WithdrawalQueue {
         return claims_[_queueId];
     }
 
+    function claimDataByAddress(
+        address _account
+    ) external view returns (uint256[] memory _ids, uint256[] memory _claimAmounts, bool[] memory _claimStatuses) {
+        _ids = userQueueIds_[_account].values();
+        _claimAmounts = new uint256[](_ids.length);
+        _claimStatuses = new bool[](_ids.length);
+
+        uint256 _claimable = _claimableAmount();
+        for (uint256 i = 0; i < _ids.length; i++) {
+            _claimAmounts[i] = claims_[_ids[i]].amount;
+            _claimStatuses[i] = _claimable >= claims_[_ids[i]].accumulated;
+        }
+    }
+
     function userQueueIds(address _account) external view returns (uint256[] memory _ids, Claim[] memory _claimData) {
         _ids = userQueueIds_[_account].values();
         _claimData = new Claim[](_ids.length);

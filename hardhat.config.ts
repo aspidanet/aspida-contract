@@ -2,6 +2,8 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
 import "hardhat-abi-exporter";
+import "hardhat-gas-reporter";
+import "hardhat-storage-layout";
 
 import * as dotenv from "dotenv";
 
@@ -52,7 +54,7 @@ const config: HardhatUserConfig = {
         runOnCompile: true,
         clear: true,
         flat: true,
-        only: ["dETH", "sdETH", "Core", "StrategyLido", "RewardOracle", "StETHMinter"],
+        only: ["dETH", "sdETH", "CorePrimary", "StrategyLido", "RewardOracle", "StETHMinter"],
         spacing: 2,
         pretty: false,
     },

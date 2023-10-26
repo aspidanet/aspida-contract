@@ -303,7 +303,7 @@ export async function calcExpectedWithdraw(preState: State, action: Action) {
 
     const decreaseShares = convertToShares(preState.totalSupply, expected.totalAssets, action.args.dETHAmount, true);
     expected.totalSupply = preState.totalSupply.sub(decreaseShares);
-    expected.totalAssets = expected.totalAssets.sub(action.args.dETHAmount);
+    expected.totalAssets = expected.totalSupply.eq(ZERO) ? ZERO : expected.totalAssets.sub(action.args.dETHAmount);
     expected.totalUnderlying = preState.totalUnderlying.sub(action.args.dETHAmount);
 
     expected.account[sender].sdETHBalanceUnderlying = convertToAssets(
@@ -358,7 +358,7 @@ export async function calcExpectedRedeem(preState: State, action: Action) {
     );
 
     expected.totalSupply = preState.totalSupply.sub(action.args.sdETHAmount);
-    expected.totalAssets = expected.totalAssets.sub(decreaseAssets);
+    expected.totalAssets = expected.totalSupply.eq(ZERO) ? ZERO : expected.totalAssets.sub(decreaseAssets);
     expected.totalUnderlying = preState.totalUnderlying.sub(decreaseAssets);
 
     expected.account[sender].sdETHBalanceUnderlying = convertToAssets(

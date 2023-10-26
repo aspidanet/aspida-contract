@@ -32,7 +32,7 @@ abstract contract Minter {
      * @dev Throws an exception if the mint cap is exceeded.
      */
     modifier checkMintCap(uint256 _increaseAmount) {
-        require(mintAmounts_[msg.sender] + _increaseAmount <= mintCaps_[msg.sender], "Minter mint capacity reached");
+        _checkMintCap(msg.sender, _increaseAmount);
         _;
     }
 
@@ -66,6 +66,16 @@ abstract contract Minter {
     function _decreaseMintAmount(address _minter, uint256 _amount) internal virtual {
         mintAmounts_[_minter] -= _amount;
         emit DecreaseMintAmount(_minter, _amount, mintAmounts_[_minter]);
+    }
+
+    /**
+     * @dev Checks if the mint cap is reached for a minter.
+     * @param _minter The address of the minter.
+     * @param _amount The amount to be minted.
+     * Throws an exception if the mint cap is reached.
+     */
+    function _checkMintCap(address _minter, uint256 _amount) internal virtual {
+        require(mintAmounts_[_minter] + _amount <= mintCaps_[_minter], "_checkMintCap: Minter mint capacity reached");
     }
 
     /**

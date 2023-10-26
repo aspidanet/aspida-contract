@@ -24,7 +24,7 @@ export async function increaseTime(time: number) {
 // Mine blocks manually.
 export async function mineManually(passBlocks: number, time: number) {
     await increaseBlock(passBlocks);
-    await increaseTime(passBlocks);
+    await increaseTime(time);
 }
 
 // Get current block number.
@@ -83,4 +83,8 @@ export function getCallData(ImplFactory: any, fragment: any, args: any[]) {
 
 export function convertDecimals(amount: BigNumber, amountUnitIn: BigNumber, amountUnitOut: BigNumber) {
     return amount.mul(amountUnitOut).div(amountUnitIn);
+}
+
+export function randomRange(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min)) + min;
 }

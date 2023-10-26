@@ -44,16 +44,13 @@ abstract contract CoreStrategy {
     event StrategyRemoved(address strategy);
 
     /**
-     * @dev Emitted when 'strategy' is added to 'strategists_'.
+     * @dev Emitted when a deposit is made to a `strategy`.
      */
-    event SetStrategyEarning(address strategy, uint256 earning);
+    event DepositToStrategy(address strategy, uint256 amount);
 
     /**
-     * @dev Emitted when `strategy` is removed from `strategists_`.
+     * @dev Emitted when an amount is received from a `strategy`.
      */
-    event SetStrategyDebt(address strategy, uint256 debt);
-
-    event DepositToStrategy(address strategy, uint256 amount);
     event ReceiveFromStrategy(address strategy, uint256 amount);
 
     /**

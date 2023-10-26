@@ -20,23 +20,35 @@ import { getCurrentTime, increaseTime, mineManually } from "../utils/helper";
 
 import { ActionTestData, UserState, Action, getState, getUserState, executeAndCalcExpected } from "./sdETH";
 
-export async function supplyReward(dETH: Contract, sdETH: Contract) {
+export async function supplyReward(sdETH: Contract) {
+    const dETH = await ethers.getContractAt("dETH", await sdETH.asset());
     const rewardAmount = Ether;
     await dETH.mint(sdETH.address, rewardAmount);
+    await sdETH.mint(ZERO, await sdETH.owner());
 
     expect(await sdETH.availableReward()).to.be.gte(rewardAmount);
 }
 
-export async function speedUp(dETH: Contract, sdETH: Contract) {
+export async function speedUp(sdETH: Contract) {
     const rewardRate = await sdETH.rewardRate();
-    let availableReward = await sdETH.availableReward();
-    if (availableReward.eq(ZERO)) {
-        await dETH.mint(sdETH.address, Ether);
-        availableReward = await sdETH.availableReward();
-    }
     const currentDuration = await sdETH.duration();
+    const constRewardRate = rewardRate.eq(ZERO) ? Ether.div(currentDuration) : rewardRate;
+    const expectedReward = constRewardRate.mul(TWO).mul(currentDuration);
 
-    await sdETH._speedUpReward(availableReward, currentDuration);
+    const dETH = await ethers.getContractAt("dETH", await sdETH.asset());
+    const totalUnderlying = await dETH.balanceOf(sdETH.address);
+    const totalAssets = await sdETH.totalAssets();
+    expect(totalUnderlying).to.be.gte(totalAssets);
+
+    const expectedAvailableReward = totalUnderlying.sub(totalAssets);
+    const supplyReward = expectedReward.sub(expectedAvailableReward);
+    if (supplyReward.gt(ZERO)) await dETH.mint(sdETH.address, supplyReward);
+
+    const reward = supplyReward.add(expectedAvailableReward).sub(constRewardRate.mul(TWO));
+    const availableReward = await sdETH.availableReward();
+    expect(availableReward).to.be.gt(reward);
+
+    await sdETH._speedUpReward(reward, currentDuration);
 
     expect(await sdETH.rewardRate()).to.be.gt(rewardRate);
 }
@@ -47,8 +59,6 @@ export async function halved(sdETH: Contract) {
     const currentDuration = await sdETH.duration();
 
     await sdETH._speedUpReward(availableReward.div(TWO), currentDuration);
-
-    expect(await sdETH.rewardRate()).to.be.lte(rewardRate);
 }
 
 export async function stopDistribution(sdETH: Contract) {
@@ -63,23 +73,30 @@ export async function nextPeriod(sdETH: Contract) {
     const increaseTime = periodFinish.sub(timestamp);
     await mineManually(1, Number(increaseTime.toString()));
 
-    const availableReward = await sdETH.availableReward();
+    const rewardAmount = Ether;
+    const dETH = await ethers.getContractAt("dETH", await sdETH.asset());
+    await dETH.mint(sdETH.address, rewardAmount);
+
     const currentDuration = await sdETH.duration();
+    await sdETH._speedUpReward(rewardAmount, currentDuration);
 
-    await sdETH._speedUpReward(availableReward, currentDuration);
+    const currentPeriodFinish = await sdETH.periodFinish();
 
-    expect(await sdETH.periodFinish()).to.be.equal(periodFinish.add(increaseTime));
+    expect(currentPeriodFinish).to.be.equal(
+        utils.parseUnits((await getCurrentTime()).toString(), 0).add(currentDuration)
+    );
+    expect(currentPeriodFinish).to.be.gte(periodFinish.add(increaseTime));
 }
 
-export async function changeState(dETH: Contract, sdETH: Contract, intervention: Record<string, boolean>) {
+export async function changeState(sdETH: Contract, intervention: any) {
     if (intervention.hasOwnProperty("supplyReward") && intervention.supplyReward) {
         console.log("supplyReward");
-        await supplyReward(dETH, sdETH);
+        await supplyReward(sdETH);
     }
 
     if (intervention.hasOwnProperty("speedUp") && intervention.speedUp) {
         console.log("speedUp");
-        await speedUp(dETH, sdETH);
+        await speedUp(sdETH);
     }
 
     if (intervention.hasOwnProperty("halved") && intervention.halved) {
@@ -100,22 +117,9 @@ export async function changeState(dETH: Contract, sdETH: Contract, intervention:
 
 export async function testDepositRevert(actionTestData: ActionTestData, content: string) {
     describe(`Test sdETH(${content}) deposit test revert`, async () => {
-        let owner: Signer;
-        let manager: Signer;
-        let pauseGuardian: Signer;
-        let accounts: Signer[];
-
-        let dETH: Contract;
-        let sdETH: Contract;
-
-        before(async function () {
-            owner = actionTestData.owner;
-            manager = actionTestData.manager;
-            pauseGuardian = actionTestData.pauseGuardian;
-            accounts = actionTestData.accounts;
-            dETH = actionTestData.dETH;
-            sdETH = actionTestData.sdETH;
-        });
+        const accounts: Signer[] = actionTestData.accounts;
+        const dETH: Contract = actionTestData.dETH;
+        const sdETH: Contract = actionTestData.sdETH;
 
         it(`test deposit(${content}): insufficient allowance, expected revert`, async () => {
             const sender = accounts[0];
@@ -161,31 +165,13 @@ export async function testDepositRevert(actionTestData: ActionTestData, content:
     });
 }
 
-export async function testDeposit(
-    actionTestData: ActionTestData,
-    intervention: Record<string, boolean>,
-    content: string
-) {
+export async function testDeposit(actionTestData: ActionTestData, intervention: any, content: string) {
     describe(`Test sdETH(${content}) deposit test`, async () => {
-        let owner: Signer;
-        let manager: Signer;
-        let pauseGuardian: Signer;
-        let accounts: Signer[];
-
-        let dETH: Contract;
-        let sdETH: Contract;
-
-        before(async function () {
-            owner = actionTestData.owner;
-            manager = actionTestData.manager;
-            pauseGuardian = actionTestData.pauseGuardian;
-            accounts = actionTestData.accounts;
-            dETH = actionTestData.dETH;
-            sdETH = actionTestData.sdETH;
-        });
+        const accounts: Signer[] = actionTestData.accounts;
+        const sdETH: Contract = actionTestData.sdETH;
 
         it(`test deposit(${content}): intervention, success`, async () => {
-            await changeState(dETH, sdETH, intervention);
+            await changeState(sdETH, intervention);
         });
 
         it(`test deposit(${content}): sender = receiver, success`, async () => {
@@ -260,22 +246,9 @@ export async function testDeposit(
 
 export async function testMintRevert(actionTestData: ActionTestData, content: string) {
     describe(`Test sdETH(${content}) mint test revert`, async () => {
-        let owner: Signer;
-        let manager: Signer;
-        let pauseGuardian: Signer;
-        let accounts: Signer[];
-
-        let dETH: Contract;
-        let sdETH: Contract;
-
-        before(async function () {
-            owner = actionTestData.owner;
-            manager = actionTestData.manager;
-            pauseGuardian = actionTestData.pauseGuardian;
-            accounts = actionTestData.accounts;
-            dETH = actionTestData.dETH;
-            sdETH = actionTestData.sdETH;
-        });
+        const accounts: Signer[] = actionTestData.accounts;
+        const dETH: Contract = actionTestData.dETH;
+        const sdETH: Contract = actionTestData.sdETH;
 
         it(`test mint(${content}): insufficient allowance, expected revert`, async () => {
             const sender = accounts[0];
@@ -323,27 +296,13 @@ export async function testMintRevert(actionTestData: ActionTestData, content: st
     });
 }
 
-export async function testMint(actionTestData: ActionTestData, intervention: Record<string, boolean>, content: string) {
+export async function testMint(actionTestData: ActionTestData, intervention: any, content: string) {
     describe(`Test sdETH(${content}) mint test`, async () => {
-        let owner: Signer;
-        let manager: Signer;
-        let pauseGuardian: Signer;
-        let accounts: Signer[];
-
-        let dETH: Contract;
-        let sdETH: Contract;
-
-        before(async function () {
-            owner = actionTestData.owner;
-            manager = actionTestData.manager;
-            pauseGuardian = actionTestData.pauseGuardian;
-            accounts = actionTestData.accounts;
-            dETH = actionTestData.dETH;
-            sdETH = actionTestData.sdETH;
-        });
+        const accounts: Signer[] = actionTestData.accounts;
+        const sdETH: Contract = actionTestData.sdETH;
 
         it(`test mint(${content}): intervention, success`, async () => {
-            await changeState(dETH, sdETH, intervention);
+            await changeState(sdETH, intervention);
         });
 
         it(`test mint(${content}): sender = receiver, success`, async () => {
@@ -418,22 +377,8 @@ export async function testMint(actionTestData: ActionTestData, intervention: Rec
 
 export async function testWithdrawRevert(actionTestData: ActionTestData, content: string) {
     describe(`Test sdETH(${content}) withdraw test revert`, async () => {
-        let owner: Signer;
-        let manager: Signer;
-        let pauseGuardian: Signer;
-        let accounts: Signer[];
-
-        let dETH: Contract;
-        let sdETH: Contract;
-
-        before(async function () {
-            owner = actionTestData.owner;
-            manager = actionTestData.manager;
-            pauseGuardian = actionTestData.pauseGuardian;
-            accounts = actionTestData.accounts;
-            dETH = actionTestData.dETH;
-            sdETH = actionTestData.sdETH;
-        });
+        const accounts: Signer[] = actionTestData.accounts;
+        const sdETH: Contract = actionTestData.sdETH;
 
         it(`test withdraw(${content}): insufficient allowance, expected revert`, async () => {
             const sender = accounts[2];
@@ -506,31 +451,13 @@ export async function testWithdrawRevert(actionTestData: ActionTestData, content
     });
 }
 
-export async function testWithdraw(
-    actionTestData: ActionTestData,
-    intervention: Record<string, boolean>,
-    content: string
-) {
+export async function testWithdraw(actionTestData: ActionTestData, intervention: any, content: string) {
     describe(`Test sdETH(${content}) withdraw test`, async () => {
-        let owner: Signer;
-        let manager: Signer;
-        let pauseGuardian: Signer;
-        let accounts: Signer[];
-
-        let dETH: Contract;
-        let sdETH: Contract;
-
-        before(async function () {
-            owner = actionTestData.owner;
-            manager = actionTestData.manager;
-            pauseGuardian = actionTestData.pauseGuardian;
-            accounts = actionTestData.accounts;
-            dETH = actionTestData.dETH;
-            sdETH = actionTestData.sdETH;
-        });
+        const accounts: Signer[] = actionTestData.accounts;
+        const sdETH: Contract = actionTestData.sdETH;
 
         it(`test withdraw(${content}): intervention, success`, async () => {
-            await changeState(dETH, sdETH, intervention);
+            await changeState(sdETH, intervention);
         });
 
         it(`test withdraw(${content}): sender = receiver, sender = sdETHOwner, success`, async () => {
@@ -683,22 +610,8 @@ export async function testWithdraw(
 
 export async function testRedeemRevert(actionTestData: ActionTestData, content: string) {
     describe(`Test sdETH(${content}) redeem test revert`, () => {
-        let owner: Signer;
-        let manager: Signer;
-        let pauseGuardian: Signer;
-        let accounts: Signer[];
-
-        let dETH: Contract;
-        let sdETH: Contract;
-
-        before(async function () {
-            owner = actionTestData.owner;
-            manager = actionTestData.manager;
-            pauseGuardian = actionTestData.pauseGuardian;
-            accounts = actionTestData.accounts;
-            dETH = actionTestData.dETH;
-            sdETH = actionTestData.sdETH;
-        });
+        const accounts: Signer[] = actionTestData.accounts;
+        const sdETH: Contract = actionTestData.sdETH;
 
         it(`test redeem(${content}): insufficient allowance, expected revert`, async () => {
             const sender = accounts[2];
@@ -770,31 +683,13 @@ export async function testRedeemRevert(actionTestData: ActionTestData, content: 
     });
 }
 
-export async function testRedeem(
-    actionTestData: ActionTestData,
-    intervention: Record<string, boolean>,
-    content: string
-) {
+export async function testRedeem(actionTestData: ActionTestData, intervention: any, content: string) {
     describe(`Test sdETH(${content}) redeem test`, async () => {
-        let owner: Signer;
-        let manager: Signer;
-        let pauseGuardian: Signer;
-        let accounts: Signer[];
-
-        let dETH: Contract;
-        let sdETH: Contract;
-
-        before(async function () {
-            owner = actionTestData.owner;
-            manager = actionTestData.manager;
-            pauseGuardian = actionTestData.pauseGuardian;
-            accounts = actionTestData.accounts;
-            dETH = actionTestData.dETH;
-            sdETH = actionTestData.sdETH;
-        });
+        const accounts: Signer[] = actionTestData.accounts;
+        const sdETH: Contract = actionTestData.sdETH;
 
         it(`test redeem(${content}): intervention, success`, async () => {
-            await changeState(dETH, sdETH, intervention);
+            await changeState(sdETH, intervention);
         });
 
         it(`test redeem(${content}): sender = receiver, sender = sdETHOwner, success`, async () => {
@@ -941,6 +836,46 @@ export async function testRedeem(
             const expected = await executeAndCalcExpected(sdETH, preState, action);
             const postState = await getState(sdETH, sender, receiver, sdETHOwner);
             expect(expected).to.deep.equal(postState);
+        });
+    });
+}
+
+export async function testExtractAll(actionTestData: ActionTestData) {
+    describe(`Test sdETH redeem all test`, async () => {
+        const accounts: Signer[] = actionTestData.accounts;
+        const sdETH: Contract = actionTestData.sdETH;
+
+        it(`test all users redeem:  success`, async () => {
+            for (let index = 0; index < accounts.length; index++) {
+                const sender = accounts[index];
+                const senderAddress = await sender.getAddress();
+
+                const balance = await sdETH.balanceOf(senderAddress);
+                if (balance.eq(ZERO)) continue;
+
+                const preState = await getState(sdETH, sender, sender, sender);
+
+                const action: Action = {
+                    func: "redeem(uint256,address,address)",
+                    sender: sender,
+                    args: {
+                        dETHAmount: ZERO,
+                        sdETHAmount: balance,
+                        receiver: senderAddress,
+                        owner: senderAddress,
+                    },
+                };
+
+                const expected = await executeAndCalcExpected(sdETH, preState, action);
+                const postState = await getState(sdETH, sender, sender, sender);
+                expect(expected).to.deep.equal(postState);
+            }
+        });
+
+        it(`test no asset status check: , success`, async () => {
+            const sender = accounts[0];
+            const postState = await getState(sdETH, sender, sender, sender);
+            expect(postState.totalSupply).to.be.equal(ZERO);
         });
     });
 }

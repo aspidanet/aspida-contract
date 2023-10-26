@@ -86,13 +86,12 @@ abstract contract ActionControl {
             if (_index == _actionData.latestIndex) _accumulatedPerIndex = _accumulated - _actionData.accumulated;
 
             if (_index != _actionData.latestIndex) {
-                _accumulatedPerIndex = _increase;
                 _actionData.latestIndex = _index;
                 _actionData.accumulated = _accumulated;
                 emit UpdateActionData(_actionId, _index, _accumulated);
             }
 
-            require(_accumulatedPerIndex <= _actionData.limit, "_checkActionLimit: Limit exceeded");
+            require(_accumulatedPerIndex + _increase <= _actionData.limit, "_checkActionLimit: Limit exceeded");
         }
     }
 
@@ -154,7 +153,8 @@ abstract contract ActionControl {
         ActionData storage _actionData = actionDatas_[_actionId];
         if (_actionData.limit > 0) {
             if (_index != _actionData.latestIndex) return _actionData.limit;
-            return _actionData.limit - (_accumulated - _actionData.accumulated);
+            uint256 _indexAccumulated = _accumulated - _actionData.accumulated;
+            return _actionData.limit > _indexAccumulated ? _actionData.limit - _indexAccumulated : 0;
         }
         return type(uint256).max;
     }

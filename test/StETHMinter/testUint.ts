@@ -76,7 +76,7 @@ describe("Test StETHMinter unit test", () => {
         expect(await MockstETH.allowance(senderAddr, StETHMinter.address)).to.be.gte(amount);
 
         await expect(StETHMinter.connect(sender)["deposit(uint256,address)"](amount, receiver)).to.be.revertedWith(
-            "Minter mint capacity reached"
+            "_checkMintCap: Minter mint capacity reached"
         );
     });
 

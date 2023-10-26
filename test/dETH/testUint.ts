@@ -163,7 +163,7 @@ describe("Test dETH unit test", () => {
         expect(mintCap).to.be.lt(mintAmount.add(amount));
 
         await expect(dETH.connect(minter).minterMint(receiver, amount)).to.be.revertedWith(
-            "Minter mint capacity reached"
+            "_checkMintCap: Minter mint capacity reached"
         );
     });
 
@@ -215,7 +215,7 @@ describe("Test dETH unit test", () => {
 
         const amount = ONE;
         await expect(dETH.connect(minter).minterMint(receiver, amount)).to.be.revertedWith(
-            "Minter mint capacity reached"
+            "_checkMintCap: Minter mint capacity reached"
         );
 
         expect(await dETH.mintCap(minterAddr)).to.be.equal(await dETH.mintAmount(minterAddr));

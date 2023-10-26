@@ -369,44 +369,6 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "strategy",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "debt",
-        "type": "uint256"
-      }
-    ],
-    "name": "SetStrategyDebt",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "strategy",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "earning",
-        "type": "uint256"
-      }
-    ],
-    "name": "SetStrategyEarning",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
         "name": "treasury",
         "type": "address"
       }

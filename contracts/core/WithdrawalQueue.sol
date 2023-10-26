@@ -151,7 +151,7 @@ abstract contract WithdrawalQueue {
         uint256 _claimAmount;
         for (uint256 i = 0; i < _queueIds.length; i++) {
             uint256 _amount = _getClaimAmount(_queueIds[i], _availableBalance);
-            if (_amount == 0) break;
+            if (_amount == 0) continue;
 
             require(_userQueueIds.remove(_queueIds[i]), "_claimByQueueId: Queue id does not exist");
             emit ExitWithdrawalQueue(_sender, _receiver, _queueIds[i], _amount);
@@ -311,6 +311,13 @@ abstract contract WithdrawalQueue {
         return claims_[_queueId];
     }
 
+    /**
+     * @dev Returns the claim data for a specific address.
+     * @param _account The address to get claim data for.
+     * @return _ids The IDs of the claims.
+     * @return _claimAmounts The amounts of the claims.
+     * @return _claimStatuses The statuses of the claims.
+     */
     function claimDataByAddress(
         address _account
     ) external view returns (uint256[] memory _ids, uint256[] memory _claimAmounts, bool[] memory _claimStatuses) {
@@ -325,6 +332,12 @@ abstract contract WithdrawalQueue {
         }
     }
 
+    /**
+     * @dev Returns the queue IDs and claim data for a specific user.
+     * @param _account The address of the user.
+     * @return _ids The IDs of the user's claims.
+     * @return _claimData The claim data for each of the user's claims.
+     */
     function userQueueIds(address _account) external view returns (uint256[] memory _ids, Claim[] memory _claimData) {
         _ids = userQueueIds_[_account].values();
         _claimData = new Claim[](_ids.length);

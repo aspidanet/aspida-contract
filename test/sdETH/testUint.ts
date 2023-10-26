@@ -17,17 +17,9 @@ import {
     AddressZero,
     AbiCoder,
 } from "../utils/constants";
-import { getCurrentTime, increaseTime, mineManually } from "../utils/helper";
+import { randomRange } from "../utils/helper";
 
-import {
-    ActionTestData,
-    // Intervention,
-    UserState,
-    Action,
-    getState,
-    getUserState,
-    executeAndCalcExpected,
-} from "./sdETH";
+import { ActionTestData, UserState, Action, getState, getUserState, executeAndCalcExpected } from "./sdETH";
 import {
     testDepositRevert,
     testDeposit,
@@ -37,6 +29,7 @@ import {
     testWithdraw,
     testRedeemRevert,
     testRedeem,
+    testExtractAll,
 } from "./action";
 
 describe("Test sdETH unit test", () => {
@@ -63,7 +56,7 @@ describe("Test sdETH unit test", () => {
 
     before(async function () {
         await init();
-        const mintAmount = utils.parseEther("10000");
+        const mintAmount = utils.parseEther("100000000");
         for (let index = 0; index < accounts.length; index++) {
             const accountAddr = await accounts[index].getAddress();
             await dETH.mint(accountAddr, mintAmount);
@@ -111,10 +104,6 @@ describe("Test sdETH unit test", () => {
             initData,
             {
                 supplyReward: true,
-                speedUp: false,
-                halved: false,
-                stopDistribution: false,
-                nextPeriod: false,
             },
             content
         );
@@ -138,4 +127,74 @@ describe("Test sdETH unit test", () => {
         await testWithdraw(initData, intervention, content);
         await testMint(initData, intervention, content);
     });
+
+    it("test halved", async () => {
+        const content = "halved";
+        const intervention = {
+            halved: true,
+        };
+
+        await testDeposit(initData, intervention, content);
+        await testRedeem(initData, intervention, content);
+        await testWithdraw(initData, intervention, content);
+        await testMint(initData, intervention, content);
+    });
+
+    it("test stopDistribution", async () => {
+        const content = "stopDistribution";
+        const intervention = {
+            stopDistribution: true,
+        };
+
+        await testDeposit(initData, intervention, content);
+        await testRedeem(initData, intervention, content);
+        await testWithdraw(initData, intervention, content);
+        await testMint(initData, intervention, content);
+    });
+
+    it("test nextPeriod", async () => {
+        const content = "nextPeriod";
+        const intervention = {
+            nextPeriod: true,
+        };
+
+        await testDeposit(initData, intervention, content);
+        await testRedeem(initData, intervention, content);
+        await testWithdraw(initData, intervention, content);
+        await testMint(initData, intervention, content);
+    });
+
+    const times = 10;
+    const interventionActions = ["supplyReward", "speedUp", "halved", "stopDistribution", "nextPeriod"];
+    const actions = [testDeposit, testRedeem, testWithdraw, testMint];
+
+    for (let index = 0; index <= times; index++) {
+        it("test random test", async () => {
+            if (index == times) {
+                await testExtractAll(initData);
+                return;
+            }
+            const interventionKey = interventionActions[randomRange(0, interventionActions.length)];
+            const content = `${index} : ${interventionKey}`;
+
+            let intervention: Record<string, boolean> = {};
+            intervention[interventionKey] = true;
+            await actions[randomRange(0, actions.length)](initData, intervention, content);
+        });
+    }
+
+    for (let index = 0; index <= times; index++) {
+        it("test random test", async () => {
+            if (index == times) {
+                await testExtractAll(initData);
+                return;
+            }
+            const interventionKey = interventionActions[randomRange(0, interventionActions.length)];
+            const content = `${index} : ${interventionKey}`;
+
+            let intervention: Record<string, boolean> = {};
+            intervention[interventionKey] = true;
+            await actions[randomRange(0, actions.length)](initData, intervention, content);
+        });
+    }
 });

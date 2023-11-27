@@ -1,12 +1,6 @@
 [
   {
-    "inputs": [
-      {
-        "internalType": "contract IERC20Upgradeable",
-        "name": "_dETH",
-        "type": "address"
-      }
-    ],
+    "inputs": [],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },

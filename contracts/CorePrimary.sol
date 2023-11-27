@@ -52,6 +52,19 @@ contract CorePrimary is
     }
 
     /**
+     * @dev Modifier to check if the contract has enough balance to deposit for the given validators.
+     *      It throws if the contract's balance minus the strategy reserve and pending claim amount divided by the deposit size is less than the number of validators.
+     * @param _validators The array of validators to check for.
+     */
+    modifier depositBalanceCheck(Validator[] calldata _validators) {
+        require(
+            (address(this).balance - strategyReserve_ - pendingClaimAmount_) / DEPOSIT_SIZE >= _validators.length,
+            "depositBalanceCheck: Not enough ETH"
+        );
+        _;
+    }
+
+    /**
      * @notice Only for the implementation contract, as for the proxy pattern,
      *            should call `initialize()` separately.
      */
@@ -60,7 +73,7 @@ contract CorePrimary is
         IdETH _dETH,
         IsdETH _sdETH
     ) StakingModel(_depositContract) Submit(_dETH, _sdETH) {
-        initialize();
+        _disableInitializers();
     }
 
     /**
@@ -226,13 +239,22 @@ contract CorePrimary is
      * @notice Deposits ETH into the contract for staking.
      * @param _validators The array of validators to deposit.
      */
-    function deposit(Validator[] calldata _validators) external whenNotPaused nonReentrant onlyManager {
-        require(
-            (address(this).balance - strategyReserve_ - pendingClaimAmount_) / DEPOSIT_SIZE >= _validators.length,
-            "deposit: Not enough ETH"
-        );
-
+    function deposit(
+        Validator[] calldata _validators
+    ) external whenNotPaused nonReentrant onlyManager depositBalanceCheck(_validators) {
         _deposit(_validators);
+    }
+
+    /**
+     * @notice The whitelist operator deposits ETH into the contract for staking.
+     * @param _validators The array of validators to deposit.
+     * @param _depositRoot The expected deposit root.
+     */
+    function depositCheck(
+        Validator[] calldata _validators,
+        bytes32 _depositRoot
+    ) external whenNotPaused nonReentrant onlyManager depositBalanceCheck(_validators) {
+        _depositCheck(_validators, _depositRoot);
     }
 
     /**

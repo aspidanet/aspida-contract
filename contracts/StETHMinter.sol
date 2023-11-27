@@ -17,9 +17,13 @@ contract StETHMinter is Ownable2StepUpgradeable, PauseGuardian, dETHMinter {
     using TransferHelper for address;
     address internal immutable STETH;
 
+    /**
+     * @notice Only for the implementation contract, as for the proxy pattern,
+     *            should call `initialize()` separately.
+     */
     constructor(IdETH _dETH, address _stETH) dETHMinter(_dETH) {
         STETH = _stETH;
-        initialize();
+        _disableInitializers();
     }
 
     /**

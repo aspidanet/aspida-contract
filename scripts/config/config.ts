@@ -8,10 +8,39 @@ export const network = {
 export const deployInfo = {
     mainnet: {
         DepositContract: "0x00000000219ab540356cBB839Cbe05303d7705Fa",
+        CorePrimary: {
+            reserveRatio: "0",
+            treasuryRatio: "0",
+            actionControl: {
+                submit: {
+                    actionId: 0,
+                    limit: "0",
+                    threshold: "0",
+                },
+                withdraw: {
+                    actionId: 1,
+                    limit: "0",
+                    threshold: "0",
+                },
+            },
+
+            managers: [],
+        },
         strategy: {
             Lido: {
                 stETH: "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+                mintCap: "0",
+                receiver: "",
             },
+        },
+        RewardOracle: {
+            zeroEpochTimestamp: "1606824023",
+            annualInterestRateCap: "0",
+            validatorLimitPerEpoch: "0",
+            managers: [],
+        },
+        sdETH: {
+            duration: "7", // day
         },
     },
     arbitrum: {},
@@ -44,6 +73,7 @@ export const deployInfo = {
             },
         },
         RewardOracle: {
+            zeroEpochTimestamp: "1616508384",
             annualInterestRateCap: "0.1",
             validatorLimitPerEpoch: "10",
             managers: [],

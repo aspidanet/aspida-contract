@@ -103,6 +103,17 @@ describe("Test RewardOracle unit test", () => {
         ).to.be.revertedWith("_updateEpochReward: Epoch id must increase");
     });
 
+    it("test submitEpochReward: epochId > currentEpochId, expected revert", async () => {
+        const currentEpochId = await RewardOracle.currentEpochId();
+        const epochId = currentEpochId.add(ONE);
+        const activatedValidatorCount = ONE;
+        const rewardIncrement = Ether;
+
+        await expect(
+            RewardOracle.submitEpochReward(epochId, activatedValidatorCount, rewardIncrement)
+        ).to.be.revertedWith("_updateEpochReward: Invalid epoch id");
+    });
+
     it("test submitEpochReward: Interest rate per epoch exceeds cap, expected revert", async () => {
         const epochId = (await RewardOracle.lastEpochId()).add(ONE);
         const activatedValidatorCount = ONE;

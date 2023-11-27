@@ -45,10 +45,9 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
     /**
      * @notice Only for the implementation contract, as for the proxy pattern,
      *            should call `initialize()` separately.
-     * @param _dETH The address of the dETH contract.
      */
-    constructor(IERC20Upgradeable _dETH) {
-        initialize(_dETH);
+    constructor() {
+        _disableInitializers();
     }
 
     /**

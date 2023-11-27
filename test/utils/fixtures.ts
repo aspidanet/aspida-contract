@@ -1,5 +1,5 @@
 import { ethers, waffle } from "hardhat";
-import { Contract } from "ethers";
+import { Contract, utils } from "ethers";
 import { getCallData } from "./helper";
 
 // Use ethers provider instead of waffle's default MockProvider
@@ -45,14 +45,20 @@ export async function fixtureDefault() {
     const DepositContract: Contract = await deployContract("DepositContract", []);
 
     const { contract: dETH } = await deployProxy("dETH", [], "initialize()", []);
-    const { contract: sdETH } = await deployProxy("sdETH", [dETH.address], "initialize(address)", [dETH.address]);
+    const { contract: sdETH } = await deployProxy("sdETH", [], "initialize(address)", [dETH.address]);
     const { contract: CorePrimary } = await deployProxy(
         "CorePrimary",
         [DepositContract.address, dETH.address, sdETH.address],
         "initialize()",
         []
     );
-    const { contract: RewardOracle } = await deployProxy("RewardOracle", [CorePrimary.address], "initialize()", []);
+    const zeroEpochTimestamp = utils.parseUnits("1606824023", 0);
+    const { contract: RewardOracle } = await deployProxy(
+        "RewardOracle",
+        [CorePrimary.address, zeroEpochTimestamp],
+        "initialize()",
+        []
+    );
 
     const { contract: MockstETH } = await deployProxy("MockstETH", [], "initialize()", []);
     const { contract: StETHMinter } = await deployProxy(

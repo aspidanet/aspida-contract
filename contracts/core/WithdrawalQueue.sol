@@ -23,11 +23,8 @@ abstract contract WithdrawalQueue {
 
     uint256 internal lastQueueId_; // The last queue ID
     mapping(address => EnumerableSet.UintSet) internal userQueueIds_; // Mapping of user addresses to their queue IDs
-    struct Claim {
-        uint256 amount; // The amount of funds in the queue
-        uint256 accumulated; // The accumulated amount of funds in the queue
-    }
-    mapping(uint256 => Claim) internal claims_; // Mapping of queue IDs to their claim data
+
+    mapping(uint256 => uint256) internal claimAccumulated_; // Mapping of queue IDs to their accumulated claim amounts
 
     /**
      * @dev Emitted when the total amount of funds in the queue is updated.
@@ -90,18 +87,17 @@ abstract contract WithdrawalQueue {
      */
     function _withdrawalQueue(address _receiver, uint256 _amount) internal {
         uint256 _queueId = lastQueueId_;
-        uint256 _accumulated = claims_[_queueId].accumulated;
+        uint256 _accumulated = claimAccumulated_[_queueId];
 
         _queueId += 1;
-        require(userQueueIds_[_receiver].add(_queueId), "_withdrawalQueue: Queue id already exists");
+        userQueueIds_[_receiver].add(_queueId);
 
-        Claim storage _claimData = claims_[_queueId];
-        _claimData.amount = _amount;
-        _claimData.accumulated = _accumulated + _amount;
+        uint256 _claimAccumulated = _accumulated + _amount;
+        claimAccumulated_[_queueId] = _claimAccumulated;
 
         lastQueueId_ = _queueId;
         _updatePendingClaim(pendingClaimAmount_ + _amount);
-        emit EnterWithdrawalQueue(msg.sender, _receiver, _queueId, _claimData.amount, _claimData.accumulated);
+        emit EnterWithdrawalQueue(msg.sender, _receiver, _queueId, _amount, _claimAccumulated);
     }
 
     /**
@@ -187,14 +183,28 @@ abstract contract WithdrawalQueue {
     }
 
     /**
+     * @dev Returns the claim amount and accumulated claim amount for a specific queue ID.
+     * @param _queueId The queue ID.
+     * @return _claimAmount The claim amount for the queue ID.
+     * @return _claimAccumulated The accumulated claim amount for the queue ID.
+     */
+    function _claimDataByQueueId(
+        uint256 _queueId
+    ) internal view returns (uint256 _claimAmount, uint256 _claimAccumulated) {
+        _claimAccumulated = claimAccumulated_[_queueId];
+        if (_claimAccumulated > 0) _claimAmount = _claimAccumulated - claimAccumulated_[_queueId - 1];
+    }
+
+    /**
      * @dev Returns the claim amount for a specific queue ID.
      * @param _queueId The queue ID.
      * @param _claimable The claimable amount of funds.
      * @return _claimAmount The claim amount for the queue ID.
      */
     function _getClaimAmount(uint256 _queueId, uint256 _claimable) internal view returns (uint256 _claimAmount) {
-        Claim storage _claimData = claims_[_queueId];
-        if (_claimable >= _claimData.accumulated) _claimAmount = _claimData.amount;
+        uint256 _accumulated;
+        (_claimAmount, _accumulated) = _claimDataByQueueId(_queueId);
+        if (_claimable < _accumulated) _claimAmount = 0;
     }
 
     /**
@@ -283,7 +293,7 @@ abstract contract WithdrawalQueue {
      * @return The accumulated amount of funds in the queue.
      */
     function accumulated() external view returns (uint256) {
-        return claims_[lastQueueId_].accumulated;
+        return claimAccumulated_[lastQueueId_];
     }
 
     /**
@@ -303,12 +313,15 @@ abstract contract WithdrawalQueue {
     }
 
     /**
-     * @dev Returns the claim data for a specific queue ID.
-     * @param _queueId The queue ID.
-     * @return The claim data for the queue ID.
+     * @dev Returns the claim amount and accumulated claim amount for a specific queue ID.
+     * @param _queueId The queue ID to get claim data for.
+     * @return _claimAmount The claim amount for the queue ID.
+     * @return _claimAccumulated The accumulated claim amount for the queue ID.
      */
-    function claimData(uint256 _queueId) external view returns (Claim memory) {
-        return claims_[_queueId];
+    function claimDataByQueueId(
+        uint256 _queueId
+    ) external view returns (uint256 _claimAmount, uint256 _claimAccumulated) {
+        (_claimAmount, _claimAccumulated) = _claimDataByQueueId(_queueId);
     }
 
     /**
@@ -326,23 +339,29 @@ abstract contract WithdrawalQueue {
         _claimStatuses = new bool[](_ids.length);
 
         uint256 _claimable = _claimableAmount();
+        uint256 _accumulated;
         for (uint256 i = 0; i < _ids.length; i++) {
-            _claimAmounts[i] = claims_[_ids[i]].amount;
-            _claimStatuses[i] = _claimable >= claims_[_ids[i]].accumulated;
+            (_claimAmounts[i], _accumulated) = _claimDataByQueueId(_ids[i]);
+            _claimStatuses[i] = _claimable >= _accumulated;
         }
     }
 
     /**
-     * @dev Returns the queue IDs and claim data for a specific user.
+     * @dev Returns the user's queue IDs, claim amounts, and accumulated claim amounts.
      * @param _account The address of the user.
      * @return _ids The IDs of the user's claims.
-     * @return _claimData The claim data for each of the user's claims.
+     * @return _claimAmounts The amounts of the user's claims.
+     * @return _accumulations The accumulated amounts of the user's claims.
      */
-    function userQueueIds(address _account) external view returns (uint256[] memory _ids, Claim[] memory _claimData) {
+    function userQueueIds(
+        address _account
+    ) external view returns (uint256[] memory _ids, uint256[] memory _claimAmounts, uint256[] memory _accumulations) {
         _ids = userQueueIds_[_account].values();
-        _claimData = new Claim[](_ids.length);
-        for (uint256 i = 0; i < _claimData.length; i++) {
-            _claimData[i] = claims_[_ids[i]];
+        _claimAmounts = new uint256[](_ids.length);
+        _accumulations = new uint256[](_ids.length);
+
+        for (uint256 i = 0; i < _accumulations.length; i++) {
+            (_claimAmounts[i], _accumulations[i]) = _claimDataByQueueId(_ids[i]);
         }
     }
 }

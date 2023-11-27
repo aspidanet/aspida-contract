@@ -135,8 +135,8 @@ export async function getUserState(CorePrimary: Contract, user: Signer) {
     for (let index = 0; index < queueDatas._ids.length; index++) {
         const item: ClaimData = {
             queueId: queueDatas._ids[index],
-            amount: queueDatas._claimData[index].amount,
-            accumulated: queueDatas._claimData[index].accumulated,
+            amount: queueDatas._claimAmounts[index],
+            accumulated: queueDatas._accumulations[index],
         };
         claimData.push(item);
     }

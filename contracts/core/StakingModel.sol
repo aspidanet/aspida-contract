@@ -99,6 +99,20 @@ abstract contract StakingModel {
     }
 
     /**
+     * @dev Checks the deposit root and deposits validators.
+     * @param _validators The validators to deposit.
+     * @param _depositRoot The expected deposit root.
+     */
+    function _depositCheck(Validator[] calldata _validators, bytes32 _depositRoot) internal {
+        // Require that the deposit root has not changed
+        require(
+            _depositRoot == IDepositContract(DEPOSIT_CONTRACT).get_deposit_root(),
+            "_depositCheck: Deposit root has changed"
+        );
+        _deposit(_validators);
+    }
+
+    /**
      * @dev Slices a portion of a bytes array.
      * @param _src The source bytes array.
      * @param _srcStart The starting index of the slice.

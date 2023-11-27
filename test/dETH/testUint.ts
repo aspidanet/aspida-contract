@@ -285,16 +285,16 @@ describe("Test dETH unit test", () => {
         );
     });
 
-    it("test pause: burn, expected revert", async () => {
-        const sender = accounts[0];
+    // it("test pause: burn, expected revert", async () => {
+    //     const sender = accounts[0];
 
-        const amount = (await dETH.balanceOf(await sender.getAddress())).div(TWO);
-        expect(amount).to.be.gt(ZERO);
+    //     const amount = (await dETH.balanceOf(await sender.getAddress())).div(TWO);
+    //     expect(amount).to.be.gt(ZERO);
 
-        await expect(dETH.connect(sender).burn(amount)).to.be.revertedWith(
-            "_beforeTokenTransfer: token transfer while paused"
-        );
-    });
+    //     await expect(dETH.connect(sender).burn(amount)).to.be.revertedWith(
+    //         "_beforeTokenTransfer: token transfer while paused"
+    //     );
+    // });
 
     it("test pause: burnFrom, expected revert", async () => {
         const sender = accounts[1];

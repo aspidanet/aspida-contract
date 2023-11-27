@@ -954,37 +954,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_queueId",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimData",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "accumulated",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct WithdrawalQueue.Claim",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "_account",
         "type": "address"
@@ -1006,6 +975,30 @@
         "internalType": "bool[]",
         "name": "_claimStatuses",
         "type": "bool[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_queueId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claimDataByQueueId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "_claimAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_claimAccumulated",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1063,6 +1056,41 @@
       }
     ],
     "name": "deposit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "operator",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "pubKey",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct StakingModel.Validator[]",
+        "name": "_validators",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_depositRoot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "depositCheck",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1574,21 +1602,14 @@
         "type": "uint256[]"
       },
       {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "accumulated",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct WithdrawalQueue.Claim[]",
-        "name": "_claimData",
-        "type": "tuple[]"
+        "internalType": "uint256[]",
+        "name": "_claimAmounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_accumulations",
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",

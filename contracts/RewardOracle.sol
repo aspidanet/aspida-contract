@@ -17,12 +17,15 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
     uint256 internal constant BASE = 1e18;
     uint256 internal constant SECONDS_PER_SLOT = 12 seconds;
     uint256 internal constant SLOT_PER_EPOCH = 32;
-    uint256 internal constant EPOCH_PER_YEAR = 365 days / (SECONDS_PER_SLOT * SLOT_PER_EPOCH);
+    uint256 internal constant SECONDS_PER_EPOCH = SECONDS_PER_SLOT * SLOT_PER_EPOCH;
+    uint256 internal constant EPOCH_PER_YEAR = 365 days / SECONDS_PER_EPOCH;
     uint256 internal constant EPOCH_INTEREST_RATE_MAX = BASE / EPOCH_PER_YEAR;
 
     uint256 internal constant DEPOSIT_SIZE = 32 ether; // The deposit size for validators
 
     ICore internal immutable CORE; // The interface for the core contract
+
+    uint256 internal immutable ZERO_EPOCH_TIMESTAMP; // The timestamp of the zero epoch
 
     uint256 internal interestRateLimitPerEpoch_; // The interest rate limit per epoch
     uint256 internal validatorLimitPerEpoch_; // The validator limit per epoch
@@ -56,9 +59,10 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
      *            should call `initialize()` separately.
      * @param _core The interface for the core contract
      */
-    constructor(ICore _core) {
+    constructor(ICore _core, uint256 _zeroEpochTimestamp) {
         CORE = _core;
-        initialize();
+        ZERO_EPOCH_TIMESTAMP = _zeroEpochTimestamp;
+        _disableInitializers();
     }
 
     /**
@@ -166,6 +170,15 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
     }
 
     /**
+     * @notice Calculate the current epoch ID.
+     * @return The current epoch ID.
+     */
+    function _currentEpochId() internal view returns (uint256) {
+        // Calculate the current epoch ID based on the current block timestamp and the timestamp of the zero epoch
+        return (block.timestamp - ZERO_EPOCH_TIMESTAMP) / SECONDS_PER_EPOCH;
+    }
+
+    /**
      * @notice Calculate the epoch interest rate.
      * @param _epochCount The number of epochs
      * @param _activatedValidatorCount The number of activated validators
@@ -195,6 +208,7 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
      */
     function _updateEpochReward(uint256 _epochId, uint256 _activatedValidatorCount, uint256 _rewardIncrement) internal {
         require(_activatedValidatorCount > 0, "_updateEpochReward: Active validators must not be 0");
+        require(_epochId <= _currentEpochId(), "_updateEpochReward: Invalid epoch id");
 
         uint256 _lastEpochId = lastEpochId_;
         require(_epochId > _lastEpochId, "_updateEpochReward: Epoch id must increase");
@@ -255,6 +269,14 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
     }
 
     /**
+     * @notice Get the zero epoch timestamp.
+     * @return The zero epoch timestamp.
+     */
+    function zeroEpochTimestamp() external view returns (uint256) {
+        return ZERO_EPOCH_TIMESTAMP;
+    }
+
+    /**
      * @notice Get the interest rate limit per epoch.
      * @return The interest rate limit per epoch.
      */
@@ -284,6 +306,14 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
      */
     function lastActivatedValidatorCount() external view returns (uint256) {
         return lastActivatedValidatorCount_;
+    }
+
+    /**
+     * @notice Get the current epoch ID.
+     * @return The current epoch ID.
+     */
+    function currentEpochId() external view returns (uint256) {
+        return _currentEpochId();
     }
 
     /**

@@ -2,7 +2,6 @@
 pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
 
 import "./library/PauseGuardian.sol";
@@ -15,20 +14,13 @@ import "./library/Minter.sol";
  * @dev This contract extends multiple OpenZeppelin contracts to add additional functionality.
  * @author Aspida engineer
  */
-contract dETH is
-    Ownable2StepUpgradeable,
-    PauseGuardian,
-    ERC20BurnableUpgradeable,
-    ERC20PermitUpgradeable,
-    Manable,
-    Minter
-{
+contract dETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable, Manable, Minter {
     /**
      * @notice Only for the implementation contract, as for the proxy pattern,
      *            should call `initialize()` separately.
      */
     constructor() {
-        initialize();
+        _disableInitializers();
     }
 
     /**
@@ -156,7 +148,7 @@ contract dETH is
      * @param _amount The amount of tokens to burn.
      * @dev This function allows burning tokens from another account if the sender has the necessary allowance.
      */
-    function burnFrom(address _account, uint256 _amount) public override {
+    function burnFrom(address _account, uint256 _amount) external {
         address _sender = msg.sender;
         if (_sender != _account) _spendAllowance(_account, _sender, _amount);
         _burn(_account, _amount);

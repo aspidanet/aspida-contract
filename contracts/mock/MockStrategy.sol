@@ -15,8 +15,4 @@ contract MockStrategy is StrategyBase {
     function repayCore() external {
         CORE.receiveStrategyEarning{ value: address(this).balance }();
     }
-
-    function strategyMinting(address _receiver, uint256 _amount) external {
-        CORE.strategyMinting(_receiver, _amount);
-    }
 }

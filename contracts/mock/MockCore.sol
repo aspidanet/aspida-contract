@@ -10,16 +10,15 @@ import "../interface/ICore.sol";
 contract MockCore is ICore {
     function receiveStrategyEarning() external payable override {}
 
-    function strategyMinting(address _receiver, uint256 _amount) external pure override {
-        _receiver;
-        _amount;
-    }
-
     function supplyReward(uint256 _amount) external pure override {
         _amount;
     }
 
     function dETH() external pure override returns (address) {
+        return address(0);
+    }
+
+    function treasury() external pure override returns (address) {
         return address(0);
     }
 }

@@ -6,7 +6,6 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 
 import "./library/PauseGuardian.sol";
 import "./library/Manable.sol";
-import "./core/ActionControl.sol";
 import "./core/CoreTreasury.sol";
 import "./core/CoreStrategy.sol";
 import "./core/StakingModel.sol";
@@ -29,7 +28,6 @@ contract CorePrimary is
     PauseGuardian,
     ReentrancyGuardUpgradeable,
     Manable,
-    ActionControl,
     CoreTreasury,
     CoreStrategy,
     Submit,
@@ -156,24 +154,6 @@ contract CorePrimary is
     }
 
     /**
-     * @notice Sets the action limit.
-     * @param _actionId The action ID.
-     * @param _limit The new limit.
-     */
-    function _setActionLimit(Action _actionId, uint256 _limit) external onlyOwner {
-        _setActionLimitInternal(_actionId, _limit);
-    }
-
-    /**
-     * @notice Sets the action threshold.
-     * @param _actionId The action ID.
-     * @param _threshold The new threshold.
-     */
-    function _setActionThreshold(Action _actionId, uint256 _threshold) external onlyOwner {
-        _setActionThresholdInternal(_actionId, _threshold);
-    }
-
-    /**
      * @notice Sets the reserve ratio.
      * @param _reserveRatio The new reserve ratio.
      */
@@ -272,15 +252,6 @@ contract CorePrimary is
     }
 
     /**
-     * @notice Mints DETH to the specified receiver.
-     * @param _receiver The address of the receiver.
-     * @param _amount The amount of DETH to mint.
-     */
-    function strategyMinting(address _receiver, uint256 _amount) external whenNotPaused isStrategy(msg.sender) {
-        DETH.mint(_receiver, _amount);
-    }
-
-    /**
      * @notice Receives earnings from a strategy.
      */
     function receiveStrategyEarning() external payable {
@@ -293,9 +264,7 @@ contract CorePrimary is
      * @param _receiver The address of the receiver of the transaction.
      */
     function _submit(address _receiver) internal override whenNotPaused nonReentrant {
-        uint256 _ethValue = msg.value;
-        _checkActionLimit(Action.submit, block.timestamp / 1 days, _ethValue, submitted_);
-        _increaseReservesByRatio(_ethValue);
+        _increaseReservesByRatio(msg.value);
         Submit._submit(_receiver);
     }
 
@@ -310,12 +279,6 @@ contract CorePrimary is
         address _receiver,
         uint256 _amount
     ) internal override whenNotPaused nonReentrant {
-        _checkAction(
-            Action.withdraw,
-            block.timestamp / 1 days,
-            _amount,
-            totalWithdrawn_ + pendingClaimAmount_ + totalClaimed_
-        );
         DETH.burnFrom(_sender, _amount);
         WithdrawalQueue._withdraw(_sender, _receiver, _amount);
     }
@@ -419,35 +382,6 @@ contract CorePrimary is
      */
     function received() external view returns (uint256) {
         return received_;
-    }
-
-    /**
-     * @dev Returns the remaining amount of ETH that can be submitted for the current day.
-     * @return The remaining amount of ETH that can be submitted for the current day.
-     */
-    function submitRemaining() external view returns (uint256) {
-        return actionRemaining(Action.submit, block.timestamp / 1 days, submitted_);
-    }
-
-    /**
-     * @dev Returns the remaining amount of ETH that can be withdrawn for the current day.
-     * @return The remaining amount of ETH that can be withdrawn for the current day.
-     */
-    function withdrawRemaining() external view returns (uint256) {
-        return
-            actionRemaining(
-                Action.withdraw,
-                block.timestamp / 1 days,
-                totalWithdrawn_ + pendingClaimAmount_ + totalClaimed_
-            );
-    }
-
-    /**
-     * @dev Returns the withdraw threshold.
-     * @return The withdraw threshold.
-     */
-    function withdrawThreshold() external view returns (uint256) {
-        return actionDatas_[Action.withdraw].threshold;
     }
 
     /**

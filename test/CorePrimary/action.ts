@@ -29,25 +29,6 @@ export async function setReserveRatio(CorePrimary: Contract, reserveRatio: BigNu
     expect(await CorePrimary.reserveRatio()).to.be.equal(reserveRatio);
 }
 
-export async function setActionLimit(CorePrimary: Contract, actionId: BigNumber, limit: BigNumber) {
-    const actionData = await CorePrimary.actionData(actionId);
-    if (actionData.limit.eq(limit)) return;
-    await CorePrimary._setActionLimit(actionId, limit);
-
-    expect((await CorePrimary.actionData(actionId)).limit).to.be.equal(limit);
-}
-
-export async function refreshLimit(CorePrimary: Contract) {
-    const timestamp = utils.parseUnits((await getCurrentTime()).toString(), 0);
-    const increaseTime = timestamp.add(DAY).div(DAY).mul(DAY).sub(timestamp);
-    await mineManually(1, Number(increaseTime.toString()));
-
-    const dETH = await ethers.getContractAt("dETH", await CorePrimary.dETH());
-    await dETH.approve(CorePrimary.address, MAX);
-
-    expect(utils.parseUnits((await getCurrentTime()).toString(), 0).div(DAY)).to.be.gt(timestamp.div(DAY));
-}
-
 export async function releaseStrategyReserve(CorePrimary: Contract, releaseAmount: BigNumber) {
     const strategyReserve = await CorePrimary.strategyReserve();
     if (strategyReserve.gte(releaseAmount)) {
@@ -84,21 +65,6 @@ export async function changeState(CorePrimary: Contract, intervention: any) {
         await setReserveRatio(CorePrimary, intervention.reserveRatio);
     }
 
-    if (intervention.hasOwnProperty("submitLimit")) {
-        console.log(`set submitLimit ${utils.formatEther(intervention.submitLimit)}`);
-        await setActionLimit(CorePrimary, ZERO, intervention.submitLimit);
-    }
-
-    if (intervention.hasOwnProperty("withdrawLimit")) {
-        console.log(`set withdrawLimit ${utils.formatEther(intervention.withdrawLimit)}`);
-        await setActionLimit(CorePrimary, ONE, intervention.withdrawLimit);
-    }
-
-    if (intervention.hasOwnProperty("refreshLimit") && intervention.refreshLimit) {
-        console.log("refreshLimit");
-        await refreshLimit(CorePrimary);
-    }
-
     if (intervention.hasOwnProperty("supplyClaim") && intervention.supplyClaim) {
         console.log("supplyClaim");
         await supplyClaim(CorePrimary);
@@ -117,24 +83,6 @@ export async function testSubmitRevert(actionTestData: ActionTestData) {
             await expect(CorePrimary.connect(sender)["submit()"]({ value: ethValue })).to.be.revertedWith(
                 "_submit: ETH cannot be 0"
             );
-        });
-
-        it(`test submit() : submitLimit > 0, value > submitRemaining, expected revert`, async () => {
-            const sender = accounts[0];
-
-            const limit = Ether;
-            await CorePrimary._setActionLimit(ZERO, limit);
-            const actionData = await CorePrimary.actionData(ZERO);
-            expect(actionData.limit).to.be.equal(limit);
-
-            const submitRemaining = await CorePrimary.submitRemaining();
-            const ethValue = submitRemaining.add(ONE);
-
-            await expect(CorePrimary.connect(sender)["submit()"]({ value: ethValue })).to.be.revertedWith(
-                "_checkActionLimit: Limit exceeded"
-            );
-
-            await CorePrimary._setActionLimit(ZERO, ZERO);
         });
 
         it(`test submit(): paused, expected revert`, async () => {
@@ -200,13 +148,7 @@ export async function testSubmit(actionTestData: ActionTestData, intervention: a
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const submitLimit = preState.submitActionData.remaining.div(TWO);
-            if (submitLimit.eq(ZERO)) {
-                console.log("submit limit exceeded!");
-                return;
-            }
-
-            const ethValue = Ether.gt(submitLimit) ? submitLimit : Ether;
+            const ethValue = Ether;
             const action: Action = {
                 func: "submit()",
                 sender: sender,
@@ -227,13 +169,7 @@ export async function testSubmit(actionTestData: ActionTestData, intervention: a
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const submitLimit = preState.submitActionData.remaining.div(TWO);
-            if (submitLimit.eq(ZERO)) {
-                console.log("submit limit exceeded!");
-                return;
-            }
-
-            const ethValue = Ether.gt(submitLimit) ? submitLimit : Ether;
+            const ethValue = Ether;
             const action: Action = {
                 func: "submit(address)",
                 sender: sender,
@@ -254,13 +190,7 @@ export async function testSubmit(actionTestData: ActionTestData, intervention: a
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const submitLimit = preState.submitActionData.remaining.div(TWO);
-            if (submitLimit.eq(ZERO)) {
-                console.log("submit limit exceeded!");
-                return;
-            }
-
-            const ethValue = Ether.gt(submitLimit) ? submitLimit : Ether;
+            const ethValue = Ether;
             const action: Action = {
                 func: "submit(address)",
                 sender: sender,
@@ -281,13 +211,7 @@ export async function testSubmit(actionTestData: ActionTestData, intervention: a
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const submitLimit = preState.submitActionData.remaining.div(TWO);
-            if (submitLimit.eq(ZERO)) {
-                console.log("submit limit exceeded!");
-                return;
-            }
-
-            const ethValue = Ether.gt(submitLimit) ? submitLimit : Ether;
+            const ethValue = Ether;
             const action: Action = {
                 func: "submitAndStake(address)",
                 sender: sender,
@@ -308,13 +232,7 @@ export async function testSubmit(actionTestData: ActionTestData, intervention: a
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const submitLimit = preState.submitActionData.remaining.div(TWO);
-            if (submitLimit.eq(ZERO)) {
-                console.log("submit limit exceeded!");
-                return;
-            }
-
-            const ethValue = Ether.gt(submitLimit) ? submitLimit : Ether;
+            const ethValue = Ether;
             const action: Action = {
                 func: "submitAndStake(address)",
                 sender: sender,
@@ -382,50 +300,6 @@ export async function testWithdrawGeneralRevert(action: string, token: Contract,
             await expect(CorePrimary.connect(sender)[action](amount)).to.be.revertedWith(
                 "_withdraw: withdraw amount cannot be 0"
             );
-        });
-
-        it(`test ${action} : withdrawLimit > 0, amount > withdrawRemaining, expected revert`, async () => {
-            const sender = accounts[0];
-            const receiver = sender;
-            const receiverAddress: string = await receiver.getAddress();
-            const balance = await Token.balanceOf(receiverAddress);
-            expect(balance).to.be.gt(ZERO);
-
-            const limit = Ether.div(TWO);
-            await CorePrimary._setActionLimit(ONE, limit);
-            const actionData = await CorePrimary.actionData(ONE);
-            expect(actionData.limit).to.be.equal(limit);
-
-            const withdrawRemaining = await CorePrimary.withdrawRemaining();
-            const amount = withdrawRemaining.add(ONE);
-
-            await expect(CorePrimary.connect(sender)[action](amount)).to.be.revertedWith(
-                "_checkActionLimit: Limit exceeded"
-            );
-
-            await CorePrimary._setActionLimit(ONE, ZERO);
-        });
-
-        it(`test ${action} : withdrawThreshold > 0, amount < withdrawThreshold, expected revert`, async () => {
-            const sender = accounts[0];
-            const receiver = sender;
-            const receiverAddress: string = await receiver.getAddress();
-            const balance = await Token.balanceOf(receiverAddress);
-            expect(balance).to.be.gt(ZERO);
-
-            const threshold = Ether.div(TWO);
-            await CorePrimary._setActionThreshold(ONE, threshold);
-            const actionData = await CorePrimary.actionData(ONE);
-            expect(actionData.threshold).to.be.equal(threshold);
-
-            const withdrawThreshold = await CorePrimary.withdrawThreshold();
-            const amount = withdrawThreshold.sub(ONE);
-
-            await expect(CorePrimary.connect(sender)[action](amount)).to.be.revertedWith(
-                "_checkActionThreshold: Amount exceeds threshold"
-            );
-
-            await CorePrimary._setActionThreshold(ONE, ZERO);
         });
 
         it(`test ${action}: paused, expected revert`, async () => {
@@ -526,15 +400,9 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const withdrawLimit = preState.withdrawActionData.remaining.div(TWO);
-            if (withdrawLimit.eq(ZERO)) {
-                console.log("withdraw limit exceeded!");
-                return;
-            }
-
             const balance = await dETH.balanceOf(receiverAddress);
             const amount = balance.div(TWO);
-            const dETHAmount = amount.gt(withdrawLimit) ? withdrawLimit : amount;
+            const dETHAmount = amount;
             const action: Action = {
                 func: "withdraw(uint256)",
                 sender: sender,
@@ -555,15 +423,9 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const withdrawLimit = preState.withdrawActionData.remaining.div(TWO);
-            if (withdrawLimit.eq(ZERO)) {
-                console.log("withdraw limit exceeded!");
-                return;
-            }
-
             const balance = await dETH.balanceOf(receiverAddress);
             const amount = balance.div(TWO);
-            const dETHAmount = amount.gt(withdrawLimit) ? withdrawLimit : amount;
+            const dETHAmount = amount;
             const action: Action = {
                 func: "withdraw(uint256,address)",
                 sender: sender,
@@ -584,15 +446,9 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const withdrawLimit = preState.withdrawActionData.remaining.div(TWO);
-            if (withdrawLimit.eq(ZERO)) {
-                console.log("withdraw limit exceeded!");
-                return;
-            }
-
             const balance = await dETH.balanceOf(await sender.getAddress());
             const amount = balance.div(TWO);
-            const dETHAmount = amount.gt(withdrawLimit) ? withdrawLimit : amount;
+            const dETHAmount = amount;
             const action: Action = {
                 func: "withdraw(uint256,address)",
                 sender: sender,
@@ -613,15 +469,9 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const withdrawLimit = preState.withdrawActionData.remaining.div(TWO);
-            if (withdrawLimit.eq(ZERO)) {
-                console.log("withdraw limit exceeded!");
-                return;
-            }
-
             const balance = await sdETH.maxWithdraw(receiverAddress);
             const amount = balance.div(TWO);
-            const dETHAmount = amount.gt(withdrawLimit) ? withdrawLimit : amount;
+            const dETHAmount = amount;
             const action: Action = {
                 func: "redeemUnderlyingAndWithdraw(uint256)",
                 sender: sender,
@@ -642,15 +492,9 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const withdrawLimit = preState.withdrawActionData.remaining.div(TWO);
-            if (withdrawLimit.eq(ZERO)) {
-                console.log("withdraw limit exceeded!");
-                return;
-            }
-
             const balance = await sdETH.maxRedeem(receiverAddress);
             const amount = balance.div(TWO);
-            const sdETHAmount = amount.gt(withdrawLimit) ? withdrawLimit : amount;
+            const sdETHAmount = amount;
             const action: Action = {
                 func: "redeemAndWithdraw(uint256)",
                 sender: sender,

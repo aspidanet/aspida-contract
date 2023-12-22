@@ -32,26 +32,6 @@ async function main() {
         await sendTransaction(CorePrimary, "_setTreasuryRatio", [treasuryRatio], send);
     }
 
-    const actionControl = corePrimaryInfo.actionControl;
-    await Promise.all(
-        Object.keys(actionControl).map(async (action) => {
-            const actionId = actionControl[action].actionId;
-            const actionData = await CorePrimary.actionData(actionId);
-            const actionLimit = ethers.utils.parseEther(actionControl[action].limit);
-
-            if (!actionData.limit.eq(actionLimit)) {
-                console.log(`set action limit: ${action}\n`);
-                await sendTransaction(CorePrimary, "_setActionLimit", [actionId, actionLimit], send);
-            }
-
-            const actionThreshold = ethers.utils.parseEther(actionControl[action].threshold);
-            if (!actionData.threshold.eq(actionThreshold)) {
-                console.log(`set action threshold: ${action}\n`);
-                await sendTransaction(CorePrimary, "_setActionThreshold", [actionId, actionThreshold], send);
-            }
-        })
-    );
-
     const managers = Array.from(new Set(corePrimaryInfo.managers));
     const currentManagers = await CorePrimary.managers();
     await Promise.all(

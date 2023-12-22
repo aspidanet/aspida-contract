@@ -41,18 +41,8 @@ export interface State {
     totalClaimed: BigNumber;
     lastQueueId: BigNumber;
     accumulated: BigNumber;
-    submitActionData: ActionData;
-    withdrawActionData: ActionData;
     currentIndex: BigNumber;
     account: Record<string, UserState>;
-}
-
-export interface ActionData {
-    limit: BigNumber;
-    threshold: BigNumber;
-    latestIndex: BigNumber;
-    accumulated: BigNumber;
-    remaining: BigNumber;
 }
 
 export interface UserState {
@@ -91,17 +81,6 @@ export function copyUserState(userState: UserState): UserState {
     return result;
 }
 
-export function copyActionData(actionData: ActionData): ActionData {
-    const result: ActionData = {
-        limit: actionData.limit,
-        threshold: actionData.threshold,
-        latestIndex: actionData.latestIndex,
-        accumulated: actionData.accumulated,
-        remaining: actionData.remaining,
-    };
-    return result;
-}
-
 export function copyState(state: State): State {
     const result: State = {
         sender: state.sender,
@@ -117,8 +96,6 @@ export function copyState(state: State): State {
         totalClaimed: state.totalClaimed,
         lastQueueId: state.lastQueueId,
         accumulated: state.accumulated,
-        submitActionData: copyActionData(state.submitActionData),
-        withdrawActionData: copyActionData(state.withdrawActionData),
         currentIndex: state.currentIndex,
         account: {
             [state.sender]: copyUserState(state.account[state.sender]),
@@ -159,10 +136,6 @@ export async function getState(CorePrimary: Contract, sender: Signer, receiver: 
     const dETH = await ethers.getContractAt("dETH", await CorePrimary.dETH());
     const sdETH = await ethers.getContractAt("sdETH", await CorePrimary.sdETH());
 
-    const submitActionData = await CorePrimary.actionData(ZERO);
-    const submitRemaining = await CorePrimary.submitRemaining();
-    const withdrawActionData = await CorePrimary.actionData(ONE);
-    const withdrawRemaining = await CorePrimary.withdrawRemaining();
     const timestamp = utils.parseUnits((await getCurrentTime()).toString(), 0);
     const index = timestamp.div(DAY);
 
@@ -180,20 +153,6 @@ export async function getState(CorePrimary: Contract, sender: Signer, receiver: 
         totalClaimed: await CorePrimary.totalClaimed(),
         lastQueueId: await CorePrimary.lastQueueId(),
         accumulated: await CorePrimary.accumulated(),
-        submitActionData: {
-            limit: submitActionData.limit,
-            threshold: submitActionData.threshold,
-            latestIndex: submitActionData.latestIndex,
-            accumulated: submitActionData.accumulated,
-            remaining: submitRemaining,
-        },
-        withdrawActionData: {
-            limit: withdrawActionData.limit,
-            threshold: withdrawActionData.threshold,
-            latestIndex: withdrawActionData.latestIndex,
-            accumulated: withdrawActionData.accumulated,
-            remaining: withdrawRemaining,
-        },
         currentIndex: index,
         account: {
             [senderState.address]: senderState,
@@ -468,23 +427,6 @@ export async function calcExpectedSubmit(preState: State, action: Action): Promi
     const increaseReserve = increaseReserves(preState.reserveRatio, action.args.ethValue);
     expected.strategyReserve = preState.strategyReserve.add(increaseReserve);
 
-    const timestamp = utils.parseUnits((await getCurrentTime()).toString(), 0);
-    const index = timestamp.div(DAY);
-    if (preState.submitActionData.limit.gt(ZERO)) {
-        expected.submitActionData.remaining = preState.submitActionData.remaining.sub(action.args.ethValue);
-        if (!index.eq(preState.submitActionData.latestIndex)) {
-            expected.submitActionData.accumulated = preState.submitted;
-            expected.submitActionData.latestIndex = index;
-        }
-        if (!index.eq(preState.currentIndex)) {
-            expected.submitActionData.remaining = preState.submitActionData.limit.sub(action.args.ethValue);
-            expected.currentIndex = index;
-        }
-    }
-
-    if (preState.withdrawActionData.limit.gt(ZERO) && !index.eq(preState.currentIndex))
-        expected.withdrawActionData.remaining = preState.withdrawActionData.limit;
-
     return expected;
 }
 
@@ -520,24 +462,6 @@ export async function calcExpectedWithdraw(preState: State, action: Action): Pro
 
     expected.dETHTotalSupply = preState.dETHTotalSupply.sub(action.args.dETHAmount);
 
-    const timestamp = utils.parseUnits((await getCurrentTime()).toString(), 0);
-    const index = timestamp.div(DAY);
-    if (preState.withdrawActionData.limit.gt(ZERO)) {
-        expected.withdrawActionData.remaining = preState.withdrawActionData.remaining.sub(action.args.dETHAmount);
-        if (!index.eq(preState.withdrawActionData.latestIndex)) {
-            expected.withdrawActionData.accumulated = preState.totalWithdrawn
-                .add(preState.pendingClaimAmount)
-                .add(preState.totalClaimed);
-            expected.withdrawActionData.latestIndex = index;
-        }
-        if (!index.eq(preState.currentIndex)) {
-            expected.withdrawActionData.remaining = preState.withdrawActionData.limit.sub(action.args.dETHAmount);
-            expected.currentIndex = index;
-        }
-    }
-    if (preState.submitActionData.limit.gt(ZERO) && !index.eq(preState.currentIndex))
-        expected.submitActionData.remaining = preState.submitActionData.limit;
-
     return expected;
 }
 
@@ -572,11 +496,6 @@ export async function calcExpectedClaim(preState: State, action: Action, claimRe
 
     const timestamp = utils.parseUnits((await getCurrentTime()).toString(), 0);
     const index = timestamp.div(DAY);
-    if (preState.submitActionData.limit.gt(ZERO) && !index.eq(preState.currentIndex))
-        expected.submitActionData.remaining = preState.submitActionData.limit;
-
-    if (preState.withdrawActionData.limit.gt(ZERO) && !index.eq(preState.currentIndex))
-        expected.withdrawActionData.remaining = preState.withdrawActionData.limit;
 
     expected.currentIndex = index;
 

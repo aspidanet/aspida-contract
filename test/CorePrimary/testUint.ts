@@ -87,20 +87,6 @@ describe("Test CorePrimary unit test", () => {
         await testWithdraw(initData, {}, "reserveRatio = 100%");
     });
 
-    it("test: limit = 1 ether", async () => {
-        await testSubmit(initData, { submitLimit: Ether }, "submitLimit = 1 ether");
-        await testWithdraw(initData, { withdrawLimit: Ether }, "withdrawLimit = 1 ether");
-    });
-
-    it("test: limit = 1 ether, refreshLimit", async () => {
-        await testSubmit(initData, { submitLimit: Ether, refreshLimit: true }, "submitLimit = 1 ether, refreshLimit");
-        await testWithdraw(
-            initData,
-            { withdrawLimit: Ether, refreshLimit: true },
-            "withdrawLimit = 1 ether, refreshLimit"
-        );
-    });
-
     it("test Claim: revert", async () => {
         await testClaimRevert(initData);
     });
@@ -126,9 +112,6 @@ describe("Test CorePrimary unit test", () => {
             }
             const intervention = {
                 reserveRatio: utils.parseEther((randomRange(0, 100) / 100).toString()),
-                submitLimit: utils.parseEther(randomRange(1, 10).toString()),
-                withdrawLimit: utils.parseEther(randomRange(1, 10).toString()),
-                refreshLimit: enables[randomRange(0, 1)],
                 supplyClaim: enables[randomRange(0, 1)],
             };
             const content = `(random:${index})`;

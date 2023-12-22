@@ -138,101 +138,6 @@ describe("Test CorePrimary permissions", () => {
         );
     });
 
-    it("test _setActionLimit: Not owner, expected revert", async () => {
-        const sender = manager;
-        const actionId = ZERO;
-        const limit = Ether;
-        const actionData = await CorePrimary.actionData(actionId);
-        expect(actionData.limit.eq(limit)).to.be.equal(false);
-
-        await expect(CorePrimary.connect(sender)._setActionLimit(actionId, limit)).to.be.revertedWith(
-            "Ownable: caller is not the owner"
-        );
-    });
-
-    it("test _setActionLimit: is owner, success", async () => {
-        const sender = owner;
-        const actionId = ZERO;
-        const limit = Ether;
-        const actionData = await CorePrimary.actionData(actionId);
-        expect(actionData.limit.eq(limit)).to.be.equal(false);
-
-        await CorePrimary.connect(sender)._setActionLimit(actionId, limit);
-        const currentActionData = await CorePrimary.actionData(actionId);
-        expect(currentActionData.limit).to.be.equal(limit);
-        expect(currentActionData.threshold).to.be.equal(actionData.threshold);
-        expect(currentActionData.latestIndex).to.be.equal(actionData.latestIndex);
-        expect(currentActionData.accumulated).to.be.equal(actionData.accumulated);
-    });
-
-    it("test _setActionLimit: is owner, same limit, expected revert", async () => {
-        const sender = owner;
-        const actionId = ZERO;
-
-        const actionData = await CorePrimary.actionData(actionId);
-        const limit = actionData.limit;
-
-        await expect(CorePrimary.connect(sender)._setActionLimit(actionId, limit)).to.be.revertedWith(
-            "_setActionLimitInternal: Cannot set the same value"
-        );
-    });
-
-    it("test _setActionLimit: is owner, actionId invalid, expected revert", async () => {
-        const sender = owner;
-        const actionId = utils.parseUnits("2", 0);
-        const limit = Ether;
-
-        await expect(CorePrimary.connect(sender)._setActionLimit(actionId, limit)).to.be.reverted;
-    });
-
-    it("test _setActionThreshold: Not owner, expected revert", async () => {
-        const sender = manager;
-        const actionId = ZERO;
-        const threshold = Ether;
-        const actionData = await CorePrimary.actionData(actionId);
-        expect(actionData.threshold.eq(threshold)).to.be.equal(false);
-
-        await expect(CorePrimary.connect(sender)._setActionThreshold(actionId, threshold)).to.be.revertedWith(
-            "Ownable: caller is not the owner"
-        );
-    });
-
-    it("test _setActionThreshold: is owner, success", async () => {
-        const sender = owner;
-        const actionId = ONE;
-        const threshold = Ether;
-        const actionData = await CorePrimary.actionData(actionId);
-        expect(actionData.threshold.eq(threshold)).to.be.equal(false);
-
-        await CorePrimary.connect(sender)._setActionThreshold(actionId, threshold);
-        const currentActionData = await CorePrimary.actionData(actionId);
-        expect(currentActionData.threshold).to.be.equal(threshold);
-        expect(currentActionData.limit).to.be.equal(actionData.limit);
-        expect(currentActionData.latestIndex).to.be.equal(actionData.latestIndex);
-        expect(currentActionData.accumulated).to.be.equal(actionData.accumulated);
-        expect(await CorePrimary.withdrawThreshold()).to.be.equal(threshold);
-    });
-
-    it("test _setActionThreshold: is owner, same threshold, expected revert", async () => {
-        const sender = owner;
-        const actionId = ZERO;
-
-        const actionData = await CorePrimary.actionData(actionId);
-        const threshold = actionData.threshold;
-
-        await expect(CorePrimary.connect(sender)._setActionThreshold(actionId, threshold)).to.be.revertedWith(
-            "_setActionThresholdInternal: Cannot set the same value"
-        );
-    });
-
-    it("test _setActionThreshold: is owner, actionId invalid, expected revert", async () => {
-        const sender = owner;
-        const actionId = utils.parseUnits("2", 0);
-        const threshold = Ether;
-
-        await expect(CorePrimary.connect(sender)._setActionThreshold(actionId, threshold)).to.be.reverted;
-    });
-
     it("test _setReserveRatio: Not owner, expected revert", async () => {
         const sender = manager;
         const newReserveRatio = Ether.div(TWO);
@@ -573,27 +478,6 @@ describe("Test CorePrimary permissions", () => {
             dETH,
             [CorePrimary.address, RewardOracle.address, await CorePrimary.treasury(), sdETH.address],
             [ZERO, ZERO, treasuryAmount, amount.sub(treasuryAmount)]
-        );
-    });
-
-    it("test strategyMinting: Not strategy, expected revert", async () => {
-        const sender = manager;
-        const receiver = await accounts[0].getAddress();
-        const amount = Ether;
-
-        await expect(CorePrimary.connect(sender).strategyMinting(receiver, amount)).to.be.revertedWith(
-            "isStrategy: invalid strategy address"
-        );
-    });
-
-    it("test strategyMinting: is strategy, success", async () => {
-        const receiver = await accounts[0].getAddress();
-        const amount = Ether;
-
-        await expect(Strategy.strategyMinting(receiver, amount)).changeTokenBalances(
-            dETH,
-            [Strategy.address, CorePrimary.address, receiver],
-            [ZERO, ZERO, amount]
         );
     });
 

@@ -7,6 +7,7 @@ import "./library/PauseGuardian.sol";
 import "./library/Manable.sol";
 
 import "./interface/ICore.sol";
+import "./interface/IdETH.sol";
 
 /**
  * @title Aspida's ETH 2.0 staking reward oracle
@@ -167,6 +168,18 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
         );
         validatorLimitPerEpoch_ = _validatorLimitPerEpoch;
         emit SetValidatorLimitPerEpoch(_validatorLimitPerEpoch);
+    }
+
+    /**
+     * @notice Recap the loss(Slashing and strategy losses).
+     * @param _loss The amount of loss
+     *
+     * Requirements:
+     * - the caller must be `owner`.
+     */
+    function _recapLoss(uint256 _loss) external onlyOwner {
+        // Burn the loss from the treasury
+        IdETH(CORE.dETH()).burnFrom(CORE.treasury(), _loss);
     }
 
     /**

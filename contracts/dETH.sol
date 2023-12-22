@@ -26,13 +26,14 @@ contract dETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable,
     /**
      * @notice Initializes the dETH contract.
      * @dev This function should be called only once to initialize dETH.
+     * It initializes the contract as Ownable, sets the name and symbol of the token, and initializes the permit functionality.
+     * @param _name The name of the token.
+     * @param _symbol The symbol of the token.
      */
-    function initialize() public initializer {
-        string memory _tokenName = "Aspida Ether";
-        string memory _tokenSymbol = "dETH";
+    function initialize(string memory _name, string memory _symbol) public initializer {
         __Ownable2Step_init();
-        __ERC20_init(_tokenName, _tokenSymbol);
-        __ERC20Permit_init(_tokenName);
+        __ERC20_init(_name, _symbol);
+        __ERC20Permit_init(_name);
     }
 
     /**

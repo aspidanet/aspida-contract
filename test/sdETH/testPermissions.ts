@@ -57,7 +57,7 @@ describe("Test sdETH permissions", () => {
     });
 
     it("test initialize: Already initialized, expected revert", async () => {
-        await expect(sdETH.initialize(dETH.address)).to.be.revertedWith(
+        await expect(sdETH.initialize("Aspida Stake Ether", "sdETH", dETH.address)).to.be.revertedWith(
             "Initializable: contract is already initialized"
         );
     });

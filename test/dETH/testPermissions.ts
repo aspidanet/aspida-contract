@@ -36,7 +36,9 @@ describe("Test dETH permissions", () => {
     });
 
     it("test initialize: Already initialized, expected revert", async () => {
-        await expect(dETH.initialize()).to.be.revertedWith("Initializable: contract is already initialized");
+        await expect(dETH.initialize("Aspida Ether", "dETH")).to.be.revertedWith(
+            "Initializable: contract is already initialized"
+        );
     });
 
     it("test testManable, success", async () => {

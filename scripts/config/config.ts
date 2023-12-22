@@ -8,22 +8,18 @@ export const network = {
 export const deployInfo = {
     mainnet: {
         DepositContract: "0x00000000219ab540356cBB839Cbe05303d7705Fa",
+        dETH: {
+            name: "Aspida ETH",
+            symbol: "dETH",
+        },
+        sdETH: {
+            name: " Aspida staked ETH",
+            symbol: "sdETH",
+            duration: "7", // day
+        },
         CorePrimary: {
             reserveRatio: "0",
             treasuryRatio: "0",
-            actionControl: {
-                submit: {
-                    actionId: 0,
-                    limit: "0",
-                    threshold: "0",
-                },
-                withdraw: {
-                    actionId: 1,
-                    limit: "0",
-                    threshold: "0",
-                },
-            },
-
             managers: [],
         },
         strategy: {
@@ -39,30 +35,23 @@ export const deployInfo = {
             validatorLimitPerEpoch: "0",
             managers: [],
         },
-        sdETH: {
-            duration: "7", // day
-        },
     },
     arbitrum: {},
     optimism: {},
     goerli: {
         DepositContract: "0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b",
+        dETH: {
+            name: "Aspida ETH",
+            symbol: "dETH",
+        },
+        sdETH: {
+            name: " Aspida staked ETH",
+            symbol: "sdETH",
+            duration: "7", // day
+        },
         CorePrimary: {
             reserveRatio: "0",
             treasuryRatio: "0.01",
-            actionControl: {
-                submit: {
-                    actionId: 0,
-                    limit: "3",
-                    threshold: "0",
-                },
-                withdraw: {
-                    actionId: 1,
-                    limit: "6",
-                    threshold: "0",
-                },
-            },
-
             managers: [],
         },
         strategy: {
@@ -77,9 +66,6 @@ export const deployInfo = {
             annualInterestRateCap: "0.1",
             validatorLimitPerEpoch: "10",
             managers: [],
-        },
-        sdETH: {
-            duration: "7", // day
         },
     },
 };

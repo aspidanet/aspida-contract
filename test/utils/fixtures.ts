@@ -44,8 +44,12 @@ export async function fixtureDefault() {
     // Deploy DepositContract contract
     const DepositContract: Contract = await deployContract("DepositContract", []);
 
-    const { contract: dETH } = await deployProxy("dETH", [], "initialize()", []);
-    const { contract: sdETH } = await deployProxy("sdETH", [], "initialize(address)", [dETH.address]);
+    const { contract: dETH } = await deployProxy("dETH", [], "initialize(string,string)", ["Aspida Ether", "dETH"]);
+    const { contract: sdETH } = await deployProxy("sdETH", [], "initialize(string,string,address)", [
+        "Aspida Stake Ether",
+        "sdETH",
+        dETH.address,
+    ]);
     const { contract: CorePrimary } = await deployProxy(
         "CorePrimary",
         [DepositContract.address, dETH.address, sdETH.address],

@@ -51,16 +51,18 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
     }
 
     /**
-     * @notice Expects to call only once to initialize sdETH.
+     * @notice Initializes the sdETH contract.
+     * @dev This function should be called only once to initialize sdETH.
+     * It initializes the contract as Ownable, sets the name and symbol of the token, initializes the permit functionality, and sets the initial reward duration and period.
+     * @param _name The name of the token.
+     * @param _symbol The symbol of the token.
      * @param _dETH The address of the dETH contract.
      */
-    function initialize(IERC20Upgradeable _dETH) public initializer {
-        string memory _tokenName = "Aspida Stake Ether";
-        string memory _tokenSymbol = "sdETH";
+    function initialize(string memory _name, string memory _symbol, IERC20Upgradeable _dETH) public initializer {
         __Ownable2Step_init();
         __Pausable_init();
-        __ERC20_init(_tokenName, _tokenSymbol);
-        __ERC20Permit_init(_tokenName);
+        __ERC20_init(_name, _symbol);
+        __ERC20Permit_init(_name);
         __ERC4626_init(_dETH);
         _setDurationInternal(1 weeks);
         _updateReward(block.timestamp);

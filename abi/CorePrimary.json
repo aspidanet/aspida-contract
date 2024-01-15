@@ -7,13 +7,13 @@
         "type": "address"
       },
       {
-        "internalType": "contract IdETH",
-        "name": "_dETH",
+        "internalType": "contract IaETH",
+        "name": "_aETH",
         "type": "address"
       },
       {
-        "internalType": "contract IsdETH",
-        "name": "_sdETH",
+        "internalType": "contract IsaETH",
+        "name": "_saETH",
         "type": "address"
       }
     ],
@@ -611,6 +611,19 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "_loss",
+        "type": "uint256"
+      }
+    ],
+    "name": "_recapLoss",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "_releaseAmount",
         "type": "uint256"
       }
@@ -709,6 +722,19 @@
     "name": "_setTreasuryRatio",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "aETH",
+    "outputs": [
+      {
+        "internalType": "contract IaETH",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -843,19 +869,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "dETH",
-    "outputs": [
-      {
-        "internalType": "contract IdETH",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -1144,7 +1157,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_sdETHAmount",
+        "name": "_saETHAmount",
         "type": "uint256"
       }
     ],
@@ -1201,10 +1214,10 @@
   },
   {
     "inputs": [],
-    "name": "sdETH",
+    "name": "saETH",
     "outputs": [
       {
-        "internalType": "contract IsdETH",
+        "internalType": "contract IsaETH",
         "name": "",
         "type": "address"
       }

@@ -21,14 +21,14 @@ import { getCurrentTime, increaseTime } from "../utils/helper";
 
 import { LibraryTestData, testPauseGuardian } from "../Library/testLibrary";
 
-describe("Test sdETH permissions", () => {
+describe("Test saETH permissions", () => {
     let owner: Signer;
     let manager: Signer;
     let pauseGuardian: Signer;
     let accounts: Signer[];
 
-    let dETH: Contract;
-    let sdETH: Contract;
+    let aETH: Contract;
+    let saETH: Contract;
 
     let libraryTestData: LibraryTestData;
 
@@ -38,18 +38,18 @@ describe("Test sdETH permissions", () => {
         manager = initData.manager;
         pauseGuardian = initData.pauseGuardian;
         accounts = initData.accounts;
-        dETH = initData.dETH;
-        sdETH = initData.sdETH;
+        aETH = initData.aETH;
+        saETH = initData.saETH;
 
         libraryTestData = {
             owner: owner,
             manager: manager,
             pauseGuardian: pauseGuardian,
             accounts: accounts,
-            contract: sdETH,
+            contract: saETH,
         };
 
-        await dETH._addManager(await owner.getAddress());
+        await aETH._addManager(await owner.getAddress());
     }
 
     before(async function () {
@@ -57,66 +57,66 @@ describe("Test sdETH permissions", () => {
     });
 
     it("test initialize: Already initialized, expected revert", async () => {
-        await expect(sdETH.initialize("Aspida Stake Ether", "sdETH", dETH.address)).to.be.revertedWith(
+        await expect(saETH.initialize("Aspida Stake Ether", "saETH", aETH.address)).to.be.revertedWith(
             "Initializable: contract is already initialized"
         );
     });
 
-    it("test decimals: sdETH.decimals = dETH.decimals, success", async () => {
-        expect(await sdETH.decimals()).to.be.equal(await dETH.decimals());
+    it("test decimals: saETH.decimals = aETH.decimals, success", async () => {
+        expect(await saETH.decimals()).to.be.equal(await aETH.decimals());
     });
 
     it("test testPauseGuardian, success", async () => {
-        await testPauseGuardian(libraryTestData, "sdETH");
+        await testPauseGuardian(libraryTestData, "saETH");
     });
 
     it("test _setDuration: Not owner, expected revert", async () => {
         const sender = manager;
-        const currentDuration = await sdETH.duration();
+        const currentDuration = await saETH.duration();
         const duration = currentDuration.add(DAY);
 
-        await expect(sdETH.connect(sender)._setDuration(duration)).to.be.revertedWith(
+        await expect(saETH.connect(sender)._setDuration(duration)).to.be.revertedWith(
             "Ownable: caller is not the owner"
         );
     });
 
     it("test _setDuration: is owner, success", async () => {
         const sender = owner;
-        const currentDuration = await sdETH.duration();
+        const currentDuration = await saETH.duration();
         const duration = currentDuration.add(DAY);
 
-        await sdETH.connect(sender)._setDuration(duration);
-        expect(await sdETH.duration()).to.be.equal(duration);
+        await saETH.connect(sender)._setDuration(duration);
+        expect(await saETH.duration()).to.be.equal(duration);
     });
 
     it("test _setDuration: is owner, duration = 0, expected revert", async () => {
         const sender = owner;
         const duration = ZERO;
 
-        const currentDuration = await sdETH.duration();
+        const currentDuration = await saETH.duration();
         expect(duration).to.be.lt(currentDuration);
 
-        await expect(sdETH.connect(sender)._setDuration(duration)).to.be.revertedWith(
+        await expect(saETH.connect(sender)._setDuration(duration)).to.be.revertedWith(
             "_setDurationInternal: Invalid duration"
         );
     });
 
     it("test _setDuration: is owner, duration = currentDuration, expected revert", async () => {
         const sender = owner;
-        const duration = await sdETH.duration();
+        const duration = await saETH.duration();
 
-        await expect(sdETH.connect(sender)._setDuration(duration)).to.be.revertedWith(
+        await expect(saETH.connect(sender)._setDuration(duration)).to.be.revertedWith(
             "_setDurationInternal: Invalid duration"
         );
     });
 
     it("test _speedUpReward: Not owner, expected revert", async () => {
         const sender = manager;
-        const currentDuration = await sdETH.duration();
+        const currentDuration = await saETH.duration();
         const duration = currentDuration.add(DAY);
         const reward = Ether;
 
-        await expect(sdETH.connect(sender)._speedUpReward(reward, duration)).to.be.revertedWith(
+        await expect(saETH.connect(sender)._speedUpReward(reward, duration)).to.be.revertedWith(
             "Ownable: caller is not the owner"
         );
     });
@@ -126,7 +126,7 @@ describe("Test sdETH permissions", () => {
         const duration = ZERO;
         const reward = Ether;
 
-        await expect(sdETH.connect(sender)._speedUpReward(reward, duration)).to.be.revertedWith(
+        await expect(saETH.connect(sender)._speedUpReward(reward, duration)).to.be.revertedWith(
             "_speedUpReward: Invalid duration"
         );
     });
@@ -135,11 +135,11 @@ describe("Test sdETH permissions", () => {
         const sender = owner;
         const duration = DAY;
 
-        await dETH.mint(sdETH.address, Ether);
-        const availableReward = await sdETH.availableReward();
+        await aETH.mint(saETH.address, Ether);
+        const availableReward = await saETH.availableReward();
         const reward = availableReward.add(ONE);
 
-        await expect(sdETH.connect(sender)._speedUpReward(reward, duration)).to.be.revertedWith(
+        await expect(saETH.connect(sender)._speedUpReward(reward, duration)).to.be.revertedWith(
             "_speedUpReward: Invalid reward"
         );
     });
@@ -150,22 +150,22 @@ describe("Test sdETH permissions", () => {
 
         await increaseTime(
             Number(
-                (await sdETH.periodFinish()).sub(utils.parseUnits((await getCurrentTime()).toString(), 0)).toString()
+                (await saETH.periodFinish()).sub(utils.parseUnits((await getCurrentTime()).toString(), 0)).toString()
             )
         );
 
-        await dETH.mint(sdETH.address, Ether);
-        const availableReward = await sdETH.availableReward();
+        await aETH.mint(saETH.address, Ether);
+        const availableReward = await saETH.availableReward();
         const reward = availableReward.div(TWO);
 
-        const currentDuration = await sdETH.duration();
+        const currentDuration = await saETH.duration();
 
-        await sdETH.connect(sender)._speedUpReward(reward, duration);
+        await saETH.connect(sender)._speedUpReward(reward, duration);
 
         const currentTime = utils.parseUnits((await getCurrentTime()).toString(), 0);
-        expect(await sdETH.duration()).to.be.equal(currentDuration);
-        expect(await sdETH.rewardRate()).to.be.equal(reward.div(duration));
-        expect(await sdETH.periodFinish()).to.be.equal(currentTime.add(duration));
-        expect(await sdETH.lastUpdateTime()).to.be.equal(currentTime);
+        expect(await saETH.duration()).to.be.equal(currentDuration);
+        expect(await saETH.rewardRate()).to.be.equal(reward.div(duration));
+        expect(await saETH.periodFinish()).to.be.equal(currentTime.add(duration));
+        expect(await saETH.lastUpdateTime()).to.be.equal(currentTime);
     });
 });

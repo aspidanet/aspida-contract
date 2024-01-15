@@ -4,13 +4,13 @@ import { expect } from "chai";
 import { fixtureDefault } from "../utils/fixtures";
 import { MAX, ZERO, ONE, TWO, NegativeOne, Ether, AddressZero, AbiCoder } from "../utils/constants";
 
-describe("Test dETH unit test", () => {
+describe("Test aETH unit test", () => {
     let owner: Signer;
     let manager: Signer;
     let pauseGuardian: Signer;
     let accounts: Signer[];
 
-    let dETH: Contract;
+    let aETH: Contract;
 
     async function init() {
         const initData = await fixtureDefault();
@@ -18,7 +18,7 @@ describe("Test dETH unit test", () => {
         manager = initData.manager;
         pauseGuardian = initData.pauseGuardian;
         accounts = initData.accounts;
-        dETH = initData.dETH;
+        aETH = initData.aETH;
     }
 
     before(async function () {
@@ -30,7 +30,7 @@ describe("Test dETH unit test", () => {
         const receiver = await sender.getAddress();
         const amount = Ether;
 
-        await expect(dETH.connect(sender).mint(receiver, amount)).to.be.revertedWith(
+        await expect(aETH.connect(sender).mint(receiver, amount)).to.be.revertedWith(
             "onlyManager: caller is not manager"
         );
     });
@@ -39,9 +39,9 @@ describe("Test dETH unit test", () => {
         const sender = manager;
         const receiver = await accounts[0].getAddress();
         const amount = Ether;
-        await expect(dETH.connect(sender).mint(receiver, amount)).changeTokenBalances(
-            dETH,
-            [dETH.address, sender, receiver],
+        await expect(aETH.connect(sender).mint(receiver, amount)).changeTokenBalances(
+            aETH,
+            [aETH.address, sender, receiver],
             [ZERO, ZERO, amount]
         );
     });
@@ -50,8 +50,8 @@ describe("Test dETH unit test", () => {
         const sender = manager;
         const receiver = await accounts[0].getAddress();
         const amount = ZERO;
-        await expect(dETH.connect(sender).mint(receiver, amount)).changeTokenBalances(
-            dETH,
+        await expect(aETH.connect(sender).mint(receiver, amount)).changeTokenBalances(
+            aETH,
             [sender, receiver],
             [ZERO, amount]
         );
@@ -59,10 +59,10 @@ describe("Test dETH unit test", () => {
 
     it("test mint: Mint to this contract, success", async () => {
         const sender = manager;
-        const receiver = dETH.address;
+        const receiver = aETH.address;
         const amount = Ether;
-        await expect(dETH.connect(sender).mint(receiver, amount)).changeTokenBalances(
-            dETH,
+        await expect(aETH.connect(sender).mint(receiver, amount)).changeTokenBalances(
+            aETH,
             [sender, receiver],
             [ZERO, amount]
         );
@@ -72,66 +72,89 @@ describe("Test dETH unit test", () => {
         const sender = manager;
         const receiver = await accounts[0].getAddress();
         const amount = Ether;
-        await dETH._removeManager(await manager.getAddress());
-        await expect(dETH.connect(sender).mint(receiver, amount)).to.be.revertedWith(
+        await aETH._removeManager(await manager.getAddress());
+        await expect(aETH.connect(sender).mint(receiver, amount)).to.be.revertedWith(
             "onlyManager: caller is not manager"
         );
     });
 
-    it("test burnFrom: sender != account Not approved, expected revert", async () => {
+    it("test burnFrom: not a manager, expected revert", async () => {
         const sender = accounts[1];
+        expect(await aETH.isManager(await sender.getAddress())).to.be.equal(false);
+
         const account = await accounts[0].getAddress();
-        const amount = await dETH.balanceOf(account);
-        await expect(dETH.connect(sender).burnFrom(account, amount)).to.be.revertedWith(
+        const amount = await aETH.balanceOf(account);
+        await expect(aETH.connect(sender).burnFrom(account, amount)).to.be.revertedWith(
+            "onlyManager: caller is not manager"
+        );
+    });
+
+    it("test burnFrom: is the manager, sender != account Not approved, expected revert", async () => {
+        const sender = manager;
+        const newManager = await sender.getAddress();
+        await aETH._addManager(newManager);
+        expect(await aETH.isManager(await sender.getAddress())).to.be.equal(true);
+
+        const account = await accounts[0].getAddress();
+        const amount = await aETH.balanceOf(account);
+        await expect(aETH.connect(sender).burnFrom(account, amount)).to.be.revertedWith(
             "ERC20: insufficient allowance"
         );
     });
 
-    it("test burnFrom: sender != account Insufficient approved amount, expected revert", async () => {
-        const sender = accounts[1];
+    it("test burnFrom: is the manager, sender != account Insufficient approved amount, expected revert", async () => {
+        const sender = manager;
+        expect(await aETH.isManager(await sender.getAddress())).to.be.equal(true);
+
         const holder = accounts[0];
 
         const account = await holder.getAddress();
-        const amount = await dETH.balanceOf(account);
-        await dETH.connect(holder).approve(await sender.getAddress(), amount.sub(ONE));
+        const amount = await aETH.balanceOf(account);
+        await aETH.connect(holder).approve(await sender.getAddress(), amount.sub(ONE));
 
-        await expect(dETH.connect(sender).burnFrom(account, amount)).to.be.revertedWith(
+        await expect(aETH.connect(sender).burnFrom(account, amount)).to.be.revertedWith(
             "ERC20: insufficient allowance"
         );
     });
 
-    it("test burnFrom: sender != account approved amount is sufficient, success", async () => {
-        const sender = accounts[1];
+    it("test burnFrom: is the manager, sender != account approved amount is sufficient, success", async () => {
+        const sender = manager;
+        expect(await aETH.isManager(await sender.getAddress())).to.be.equal(true);
+
         const holder = accounts[0];
 
         const account = await holder.getAddress();
-        const amount = (await dETH.balanceOf(account)).div(TWO);
-        await dETH.connect(holder).approve(await sender.getAddress(), amount);
+        const amount = (await aETH.balanceOf(account)).div(TWO);
+        await aETH.connect(holder).approve(await sender.getAddress(), amount);
 
-        await expect(dETH.connect(sender).burnFrom(account, amount)).changeTokenBalances(
-            dETH,
+        await expect(aETH.connect(sender).burnFrom(account, amount)).changeTokenBalances(
+            aETH,
             [sender, account],
             [ZERO, amount.mul(NegativeOne)]
         );
     });
 
-    it("test burnFrom: sender == account, success", async () => {
-        const sender = accounts[0];
+    it("test burnFrom: is the manager, sender == account, success", async () => {
+        const sender = manager;
+        expect(await aETH.isManager(await sender.getAddress())).to.be.equal(true);
+
         const account = await sender.getAddress();
-        const amount = (await dETH.balanceOf(account)).div(TWO);
-        await expect(dETH.connect(sender).burnFrom(account, amount)).changeTokenBalances(
-            dETH,
+        const amount = (await aETH.balanceOf(account)).div(TWO);
+        await expect(aETH.connect(sender).burnFrom(account, amount)).changeTokenBalances(
+            aETH,
             [sender, account],
             [amount.mul(NegativeOne), amount.mul(NegativeOne)]
         );
     });
 
-    it("test burnFrom: sender == account amount = 0, success", async () => {
-        const sender = accounts[0];
+    it("test burnFrom: is the manager, sender == account amount = 0, success", async () => {
+        const sender = manager;
+        expect(await aETH.isManager(await sender.getAddress())).to.be.equal(true);
+
         const account = await sender.getAddress();
         const amount = ZERO;
-        await expect(dETH.connect(sender).burnFrom(account, amount)).changeTokenBalances(
-            dETH,
+        await expect(aETH.connect(sender).burnFrom(account, amount)).changeTokenBalances(
+            aETH,
             [sender, account],
             [amount.mul(NegativeOne), amount.mul(NegativeOne)]
         );
@@ -141,13 +164,13 @@ describe("Test dETH unit test", () => {
         const minter = accounts[0];
         const receiver = await minter.getAddress();
 
-        const mintCap = await dETH.mintCap(receiver);
-        const mintAmount = await dETH.mintAmount(receiver);
+        const mintCap = await aETH.mintCap(receiver);
+        const mintAmount = await aETH.mintAmount(receiver);
         expect(mintCap).to.be.gte(mintAmount);
 
         const amount = mintCap.sub(mintAmount);
-        await expect(dETH.connect(minter).minterMint(receiver, amount)).changeTokenBalances(
-            dETH,
+        await expect(aETH.connect(minter).minterMint(receiver, amount)).changeTokenBalances(
+            aETH,
             [minter, receiver],
             [amount, amount]
         );
@@ -157,12 +180,12 @@ describe("Test dETH unit test", () => {
         const minter = accounts[0];
         const receiver = await minter.getAddress();
 
-        const mintCap = await dETH.mintCap(receiver);
-        const mintAmount = await dETH.mintAmount(receiver);
+        const mintCap = await aETH.mintCap(receiver);
+        const mintAmount = await aETH.mintAmount(receiver);
         const amount = Ether;
         expect(mintCap).to.be.lt(mintAmount.add(amount));
 
-        await expect(dETH.connect(minter).minterMint(receiver, amount)).to.be.revertedWith(
+        await expect(aETH.connect(minter).minterMint(receiver, amount)).to.be.revertedWith(
             "_checkMintCap: Minter mint capacity reached"
         );
     });
@@ -172,14 +195,14 @@ describe("Test dETH unit test", () => {
         const receiver = await minter.getAddress();
 
         const mintCap = Ether.mul(TWO);
-        await dETH._setMinterCap(receiver, mintCap);
+        await aETH._setMinterCap(receiver, mintCap);
 
-        const mintAmount = await dETH.mintAmount(receiver);
+        const mintAmount = await aETH.mintAmount(receiver);
         const amount = Ether;
         expect(mintCap).to.be.gt(mintAmount.add(amount));
 
-        await expect(dETH.connect(minter).minterMint(receiver, amount)).changeTokenBalances(
-            dETH,
+        await expect(aETH.connect(minter).minterMint(receiver, amount)).changeTokenBalances(
+            aETH,
             [minter, receiver],
             [amount, amount]
         );
@@ -190,18 +213,18 @@ describe("Test dETH unit test", () => {
         const minterAddr = await accounts[0].getAddress();
         const receiver = await accounts[1].getAddress();
 
-        const mintCap = await dETH.mintCap(minterAddr);
-        const mintAmount = await dETH.mintAmount(minterAddr);
+        const mintCap = await aETH.mintCap(minterAddr);
+        const mintAmount = await aETH.mintAmount(minterAddr);
         const amount = mintCap.sub(mintAmount);
         expect(amount).to.be.gt(ZERO);
 
-        await expect(dETH.connect(minter).minterMint(receiver, amount)).changeTokenBalances(
-            dETH,
+        await expect(aETH.connect(minter).minterMint(receiver, amount)).changeTokenBalances(
+            aETH,
             [minter, receiver],
             [ZERO, amount]
         );
 
-        expect(await dETH.mintCap(minterAddr)).to.be.equal(await dETH.mintAmount(minterAddr));
+        expect(await aETH.mintCap(minterAddr)).to.be.equal(await aETH.mintAmount(minterAddr));
     });
 
     it("test minterMint: minter's mintCap < amount + mintAmount, expected revert", async () => {
@@ -209,61 +232,61 @@ describe("Test dETH unit test", () => {
         const minterAddr = await accounts[0].getAddress();
         const receiver = await accounts[1].getAddress();
 
-        const mintCap = await dETH.mintCap(minterAddr);
-        const mintAmount = await dETH.mintAmount(minterAddr);
+        const mintCap = await aETH.mintCap(minterAddr);
+        const mintAmount = await aETH.mintAmount(minterAddr);
         expect(mintCap).to.be.equal(mintAmount);
 
         const amount = ONE;
-        await expect(dETH.connect(minter).minterMint(receiver, amount)).to.be.revertedWith(
+        await expect(aETH.connect(minter).minterMint(receiver, amount)).to.be.revertedWith(
             "_checkMintCap: Minter mint capacity reached"
         );
 
-        expect(await dETH.mintCap(minterAddr)).to.be.equal(await dETH.mintAmount(minterAddr));
+        expect(await aETH.mintCap(minterAddr)).to.be.equal(await aETH.mintAmount(minterAddr));
     });
 
     it("test minterBurn: minter's mintCap = 0, amount > 0, expected revert", async () => {
         const minter = accounts[1];
         const minterAddr = await minter.getAddress();
 
-        const mintCap = await dETH.mintCap(minterAddr);
-        const mintAmount = await dETH.mintAmount(minterAddr);
+        const mintCap = await aETH.mintCap(minterAddr);
+        const mintAmount = await aETH.mintAmount(minterAddr);
         expect(mintCap).to.be.equal(ZERO);
         expect(mintAmount).to.be.equal(ZERO);
 
-        const amount = await dETH.balanceOf(minterAddr);
+        const amount = await aETH.balanceOf(minterAddr);
         expect(amount).to.be.gt(ZERO);
-        await expect(dETH.connect(minter).minterBurn(amount)).to.be.reverted;
+        await expect(aETH.connect(minter).minterBurn(amount)).to.be.reverted;
 
-        expect(await dETH.mintCap(minterAddr)).to.be.equal(await dETH.mintAmount(minterAddr));
+        expect(await aETH.mintCap(minterAddr)).to.be.equal(await aETH.mintAmount(minterAddr));
     });
 
     it("test minterBurn: minter's mintCap > 0, mintAmount > amount, success", async () => {
         const minter = accounts[0];
         const minterAddr = await minter.getAddress();
 
-        const mintCap = await dETH.mintCap(minterAddr);
-        const mintAmount = await dETH.mintAmount(minterAddr);
-        const amount = (await dETH.balanceOf(minterAddr)).div(TWO);
+        const mintCap = await aETH.mintCap(minterAddr);
+        const mintAmount = await aETH.mintAmount(minterAddr);
+        const amount = (await aETH.balanceOf(minterAddr)).div(TWO);
         expect(mintCap).to.be.gt(ZERO);
         expect(amount).to.be.gt(ZERO);
         expect(mintAmount).to.be.gt(amount);
 
-        await expect(dETH.connect(minter).minterBurn(amount)).changeTokenBalances(
-            dETH,
+        await expect(aETH.connect(minter).minterBurn(amount)).changeTokenBalances(
+            aETH,
             [minter],
             [amount.mul(NegativeOne)]
         );
     });
 
     it("test pause: transfer, expected revert", async () => {
-        await dETH._close();
+        await aETH._close();
 
         const sender = accounts[0];
         const receiver = await accounts[1].getAddress();
 
-        const amount = (await dETH.balanceOf(await sender.getAddress())).div(TWO);
+        const amount = (await aETH.balanceOf(await sender.getAddress())).div(TWO);
         expect(amount).to.be.gt(ZERO);
-        await expect(dETH.connect(sender).transfer(receiver, amount)).to.be.revertedWith(
+        await expect(aETH.connect(sender).transfer(receiver, amount)).to.be.revertedWith(
             "_beforeTokenTransfer: token transfer while paused"
         );
     });
@@ -274,13 +297,13 @@ describe("Test dETH unit test", () => {
         const fromAddr = await from.getAddress();
         const receiver = await sender.getAddress();
 
-        const amount = (await dETH.balanceOf(fromAddr)).div(TWO);
+        const amount = (await aETH.balanceOf(fromAddr)).div(TWO);
         expect(amount).to.be.gt(ZERO);
 
-        await dETH.connect(from).approve(receiver, amount);
-        expect(await dETH.allowance(fromAddr, receiver)).to.be.equal(amount);
+        await aETH.connect(from).approve(receiver, amount);
+        expect(await aETH.allowance(fromAddr, receiver)).to.be.equal(amount);
 
-        await expect(dETH.connect(sender).transferFrom(fromAddr, receiver, amount)).to.be.revertedWith(
+        await expect(aETH.connect(sender).transferFrom(fromAddr, receiver, amount)).to.be.revertedWith(
             "_beforeTokenTransfer: token transfer while paused"
         );
     });
@@ -288,27 +311,29 @@ describe("Test dETH unit test", () => {
     // it("test pause: burn, expected revert", async () => {
     //     const sender = accounts[0];
 
-    //     const amount = (await dETH.balanceOf(await sender.getAddress())).div(TWO);
+    //     const amount = (await aETH.balanceOf(await sender.getAddress())).div(TWO);
     //     expect(amount).to.be.gt(ZERO);
 
-    //     await expect(dETH.connect(sender).burn(amount)).to.be.revertedWith(
+    //     await expect(aETH.connect(sender).burn(amount)).to.be.revertedWith(
     //         "_beforeTokenTransfer: token transfer while paused"
     //     );
     // });
 
     it("test pause: burnFrom, expected revert", async () => {
-        const sender = accounts[1];
+        const sender = manager;
+        expect(await aETH.isManager(await sender.getAddress())).to.be.equal(true);
+
         const holder = accounts[0];
 
         const account = await holder.getAddress();
-        const amount = (await dETH.balanceOf(account)).div(TWO);
+        const amount = (await aETH.balanceOf(account)).div(TWO);
         expect(amount).to.be.gt(ZERO);
 
         const senderAddr = await sender.getAddress();
-        await dETH.connect(holder).approve(senderAddr, amount);
-        expect(await dETH.allowance(account, senderAddr)).to.be.equal(amount);
+        await aETH.connect(holder).approve(senderAddr, amount);
+        expect(await aETH.allowance(account, senderAddr)).to.be.equal(amount);
 
-        await expect(dETH.connect(sender).burnFrom(account, amount)).to.be.revertedWith(
+        await expect(aETH.connect(sender).burnFrom(account, amount)).to.be.revertedWith(
             "_beforeTokenTransfer: token transfer while paused"
         );
     });
@@ -318,9 +343,9 @@ describe("Test dETH unit test", () => {
         const receiver = await sender.getAddress();
         const amount = Ether;
 
-        await dETH._addManager(receiver);
+        expect(await aETH.isManager(receiver)).to.be.equal(true);
 
-        await expect(dETH.connect(sender).mint(receiver, amount)).to.be.revertedWith(
+        await expect(aETH.connect(sender).mint(receiver, amount)).to.be.revertedWith(
             "_beforeTokenTransfer: token transfer while paused"
         );
     });
@@ -329,14 +354,14 @@ describe("Test dETH unit test", () => {
         const minter = accounts[0];
         const receiver = await minter.getAddress();
 
-        const mintCap = await dETH.mintCap(receiver);
-        const mintAmount = await dETH.mintAmount(receiver);
+        const mintCap = await aETH.mintCap(receiver);
+        const mintAmount = await aETH.mintAmount(receiver);
         expect(mintCap).to.be.gte(mintAmount);
 
         const amount = mintCap.sub(mintAmount);
         expect(amount).to.be.gt(ZERO);
 
-        await expect(dETH.connect(minter).minterMint(receiver, amount)).to.be.revertedWith(
+        await expect(aETH.connect(minter).minterMint(receiver, amount)).to.be.revertedWith(
             "_beforeTokenTransfer: token transfer while paused"
         );
     });
@@ -345,14 +370,14 @@ describe("Test dETH unit test", () => {
         const minter = accounts[0];
         const minterAddr = await minter.getAddress();
 
-        const mintCap = await dETH.mintCap(minterAddr);
-        const mintAmount = await dETH.mintAmount(minterAddr);
-        const amount = (await dETH.balanceOf(minterAddr)).div(TWO);
+        const mintCap = await aETH.mintCap(minterAddr);
+        const mintAmount = await aETH.mintAmount(minterAddr);
+        const amount = (await aETH.balanceOf(minterAddr)).div(TWO);
         expect(mintCap).to.be.gt(ZERO);
         expect(amount).to.be.gt(ZERO);
         expect(mintAmount).to.be.gt(amount);
 
-        await expect(dETH.connect(minter).minterBurn(amount)).to.be.revertedWith(
+        await expect(aETH.connect(minter).minterBurn(amount)).to.be.revertedWith(
             "_beforeTokenTransfer: token transfer while paused"
         );
     });

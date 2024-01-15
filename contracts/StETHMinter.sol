@@ -4,16 +4,16 @@ pragma solidity 0.8.10;
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import "./library/PauseGuardian.sol";
-import "./strategy/model/dETHMinter.sol";
+import "./strategy/model/aETHMinter.sol";
 
-import "./interface/IdETH.sol";
+import "./interface/IaETH.sol";
 import "./interface/ILido.sol";
 
 /**
  * @title StETHMinter contract for Aspida's Lido
  * @author Aspida engineer
  */
-contract StETHMinter is Ownable2StepUpgradeable, PauseGuardian, dETHMinter {
+contract StETHMinter is Ownable2StepUpgradeable, PauseGuardian, aETHMinter {
     using TransferHelper for address;
     address internal immutable STETH;
 
@@ -21,7 +21,7 @@ contract StETHMinter is Ownable2StepUpgradeable, PauseGuardian, dETHMinter {
      * @notice Only for the implementation contract, as for the proxy pattern,
      *            should call `initialize()` separately.
      */
-    constructor(IdETH _dETH, address _stETH) dETHMinter(_dETH) {
+    constructor(IaETH _aETH, address _stETH) aETHMinter(_aETH) {
         STETH = _stETH;
         _disableInitializers();
     }
@@ -96,11 +96,11 @@ contract StETHMinter is Ownable2StepUpgradeable, PauseGuardian, dETHMinter {
     }
 
     /**
-     * @notice Converts StETH tokens to dETH tokens
+     * @notice Converts StETH tokens to aETH tokens
      * @param _stETHAmount Amount of StETH tokens to be converted
-     * @return uint256 Amount of dETH tokens
+     * @return uint256 Amount of aETH tokens
      */
-    function _convertToDETH(uint256 _stETHAmount) internal pure override returns (uint256) {
+    function _convertToAETH(uint256 _stETHAmount) internal pure override returns (uint256) {
         return _stETHAmount;
     }
 
@@ -150,7 +150,7 @@ contract StETHMinter is Ownable2StepUpgradeable, PauseGuardian, dETHMinter {
      * @return uint256 Deposit cap
      */
     function depositCap() external view returns (uint256) {
-        return DETH.mintCap(address(this));
+        return AETH.mintCap(address(this));
     }
 
     /**
@@ -158,6 +158,6 @@ contract StETHMinter is Ownable2StepUpgradeable, PauseGuardian, dETHMinter {
      * @return uint256 Deposit amount
      */
     function depositAmount() external view returns (uint256) {
-        return DETH.mintAmount(address(this));
+        return AETH.mintAmount(address(this));
     }
 }

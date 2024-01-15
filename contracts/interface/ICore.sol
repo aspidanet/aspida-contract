@@ -6,7 +6,7 @@ interface ICore {
 
     function supplyReward(uint256 _amount) external;
 
-    function dETH() external view returns (address);
+    function aETH() external view returns (address);
 
     function treasury() external view returns (address);
 }

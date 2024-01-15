@@ -251,9 +251,9 @@ export async function testSubmit(actionTestData: ActionTestData, intervention: a
 
 export async function testWithdrawRevert(actionTestData: ActionTestData) {
     await testWithdrawInsufficientAmountRevert(actionTestData);
-    await testWithdrawGeneralRevert("withdraw(uint256)", actionTestData.dETH, actionTestData);
-    await testWithdrawGeneralRevert("redeemAndWithdraw(uint256)", actionTestData.sdETH, actionTestData);
-    await testWithdrawGeneralRevert("redeemUnderlyingAndWithdraw(uint256)", actionTestData.sdETH, actionTestData);
+    await testWithdrawGeneralRevert("withdraw(uint256)", actionTestData.aETH, actionTestData);
+    await testWithdrawGeneralRevert("redeemAndWithdraw(uint256)", actionTestData.saETH, actionTestData);
+    await testWithdrawGeneralRevert("redeemUnderlyingAndWithdraw(uint256)", actionTestData.saETH, actionTestData);
 }
 
 export async function testWithdrawGeneralRevert(action: string, token: Contract, actionTestData: ActionTestData) {
@@ -323,12 +323,12 @@ export async function testWithdrawGeneralRevert(action: string, token: Contract,
         //     const sender = accounts[0];
         //     const receiver = sender;
         //     const receiverAddress: string = await receiver.getAddress();
-        //     const balance = await dETH.balanceOf(receiverAddress);
-        //     const dETHAmount = balance.div(TWO);
+        //     const balance = await aETH.balanceOf(receiverAddress);
+        //     const aETHAmount = balance.div(TWO);
 
-        //     await dETH.connect(sender).approve(CorePrimary.address, MAX);
+        //     await aETH.connect(sender).approve(CorePrimary.address, MAX);
 
-        //     await expect(CorePrimary.connect(sender)["withdraw(uint256)"](dETHAmount, { value: ONE })).to.be.reverted;
+        //     await expect(CorePrimary.connect(sender)["withdraw(uint256)"](aETHAmount, { value: ONE })).to.be.reverted;
 
         //     await CorePrimary._open();
         // });
@@ -338,19 +338,19 @@ export async function testWithdrawGeneralRevert(action: string, token: Contract,
 export async function testWithdrawInsufficientAmountRevert(actionTestData: ActionTestData) {
     describe(`Test CorePrimary withdraw test revert`, async () => {
         const accounts: Signer[] = actionTestData.accounts;
-        const dETH: Contract = actionTestData.dETH;
-        const sdETH: Contract = actionTestData.sdETH;
+        const aETH: Contract = actionTestData.aETH;
+        const saETH: Contract = actionTestData.saETH;
         const CorePrimary: Contract = actionTestData.CorePrimary;
 
         it(`test withdraw(uint256): Insufficient amount, expected revert`, async () => {
             const sender = accounts[0];
             const receiver = sender;
             const receiverAddress: string = await receiver.getAddress();
-            const dETHAmount = (await dETH.balanceOf(receiverAddress)).add(ONE);
+            const aETHAmount = (await aETH.balanceOf(receiverAddress)).add(ONE);
 
-            await dETH.connect(sender).approve(CorePrimary.address, MAX);
+            await aETH.connect(sender).approve(CorePrimary.address, MAX);
 
-            await expect(CorePrimary.connect(sender)["withdraw(uint256)"](dETHAmount)).to.be.revertedWith(
+            await expect(CorePrimary.connect(sender)["withdraw(uint256)"](aETHAmount)).to.be.revertedWith(
                 "ERC20: burn amount exceeds balance"
             );
         });
@@ -359,11 +359,11 @@ export async function testWithdrawInsufficientAmountRevert(actionTestData: Actio
             const sender = accounts[0];
             const receiver = sender;
             const receiverAddress: string = await receiver.getAddress();
-            const sdETHAmount = (await sdETH.balanceOf(receiverAddress)).add(ONE);
+            const saETHAmount = (await saETH.balanceOf(receiverAddress)).add(ONE);
 
-            await dETH.connect(sender).approve(CorePrimary.address, MAX);
+            await aETH.connect(sender).approve(CorePrimary.address, MAX);
 
-            await expect(CorePrimary.connect(sender)["redeemAndWithdraw(uint256)"](sdETHAmount)).to.be.revertedWith(
+            await expect(CorePrimary.connect(sender)["redeemAndWithdraw(uint256)"](saETHAmount)).to.be.revertedWith(
                 "ERC4626: redeem more than max"
             );
         });
@@ -372,12 +372,12 @@ export async function testWithdrawInsufficientAmountRevert(actionTestData: Actio
             const sender = accounts[0];
             const receiver = sender;
             const receiverAddress: string = await receiver.getAddress();
-            const sdETHAmount = (await sdETH.balanceOf(receiverAddress)).add(ONE);
+            const saETHAmount = (await saETH.balanceOf(receiverAddress)).add(ONE);
 
-            await dETH.connect(sender).approve(CorePrimary.address, MAX);
+            await aETH.connect(sender).approve(CorePrimary.address, MAX);
 
             await expect(
-                CorePrimary.connect(sender)["redeemUnderlyingAndWithdraw(uint256)"](sdETHAmount)
+                CorePrimary.connect(sender)["redeemUnderlyingAndWithdraw(uint256)"](saETHAmount)
             ).to.be.revertedWith("ERC4626: withdraw more than max");
         });
     });
@@ -386,8 +386,8 @@ export async function testWithdrawInsufficientAmountRevert(actionTestData: Actio
 export async function testWithdraw(actionTestData: ActionTestData, intervention: any, content: string) {
     describe(`Test CorePrimary withdraw ${content} test`, async () => {
         const accounts: Signer[] = actionTestData.accounts;
-        const dETH: Contract = actionTestData.dETH;
-        const sdETH: Contract = actionTestData.sdETH;
+        const aETH: Contract = actionTestData.aETH;
+        const saETH: Contract = actionTestData.saETH;
         const CorePrimary: Contract = actionTestData.CorePrimary;
 
         it(`test withdraw : intervention ${content}, success`, async () => {
@@ -400,14 +400,14 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const balance = await dETH.balanceOf(receiverAddress);
+            const balance = await aETH.balanceOf(receiverAddress);
             const amount = balance.div(TWO);
-            const dETHAmount = amount;
+            const aETHAmount = amount;
             const action: Action = {
                 func: "withdraw(uint256)",
                 sender: sender,
                 args: {
-                    dETHAmount: dETHAmount,
+                    aETHAmount: aETHAmount,
                     receiver: receiverAddress,
                 },
             };
@@ -423,14 +423,14 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const balance = await dETH.balanceOf(receiverAddress);
+            const balance = await aETH.balanceOf(receiverAddress);
             const amount = balance.div(TWO);
-            const dETHAmount = amount;
+            const aETHAmount = amount;
             const action: Action = {
                 func: "withdraw(uint256,address)",
                 sender: sender,
                 args: {
-                    dETHAmount: dETHAmount,
+                    aETHAmount: aETHAmount,
                     receiver: receiverAddress,
                 },
             };
@@ -446,14 +446,14 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const balance = await dETH.balanceOf(await sender.getAddress());
+            const balance = await aETH.balanceOf(await sender.getAddress());
             const amount = balance.div(TWO);
-            const dETHAmount = amount;
+            const aETHAmount = amount;
             const action: Action = {
                 func: "withdraw(uint256,address)",
                 sender: sender,
                 args: {
-                    dETHAmount: dETHAmount,
+                    aETHAmount: aETHAmount,
                     receiver: receiverAddress,
                 },
             };
@@ -469,14 +469,14 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const balance = await sdETH.maxWithdraw(receiverAddress);
+            const balance = await saETH.maxWithdraw(receiverAddress);
             const amount = balance.div(TWO);
-            const dETHAmount = amount;
+            const aETHAmount = amount;
             const action: Action = {
                 func: "redeemUnderlyingAndWithdraw(uint256)",
                 sender: sender,
                 args: {
-                    dETHAmount: dETHAmount,
+                    aETHAmount: aETHAmount,
                     receiver: receiverAddress,
                 },
             };
@@ -492,15 +492,15 @@ export async function testWithdraw(actionTestData: ActionTestData, intervention:
             const receiverAddress: string = await receiver.getAddress();
             const preState = await getState(CorePrimary, sender, receiver);
 
-            const balance = await sdETH.maxRedeem(receiverAddress);
+            const balance = await saETH.maxRedeem(receiverAddress);
             const amount = balance.div(TWO);
-            const sdETHAmount = amount;
+            const saETHAmount = amount;
             const action: Action = {
                 func: "redeemAndWithdraw(uint256)",
                 sender: sender,
                 args: {
-                    dETHAmount: sdETHAmount,
-                    sdETHAmount: sdETHAmount,
+                    aETHAmount: saETHAmount,
+                    saETHAmount: saETHAmount,
                     receiver: receiverAddress,
                 },
             };

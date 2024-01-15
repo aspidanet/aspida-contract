@@ -2,7 +2,7 @@
 pragma solidity 0.8.10;
 
 import "../../interface/ICore.sol";
-import "../../interface/IdETH.sol";
+import "../../interface/IaETH.sol";
 
 /**
  * @title Aspida's Strategy
@@ -10,11 +10,11 @@ import "../../interface/IdETH.sol";
  */
 abstract contract StrategyBase {
     ICore internal immutable CORE;
-    IdETH internal immutable DETH;
+    IaETH internal immutable AETH;
 
     constructor(ICore _core) {
         CORE = _core;
-        DETH = IdETH(_core.dETH());
+        AETH = IaETH(_core.aETH());
     }
 
     /**
@@ -27,8 +27,8 @@ abstract contract StrategyBase {
 
     function strategyReceive() external payable virtual returns (uint256);
 
-    function dETH() external view virtual returns (IdETH) {
-        return DETH;
+    function aETH() external view virtual returns (IaETH) {
+        return AETH;
     }
 
     function core() external view virtual returns (ICore) {

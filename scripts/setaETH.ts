@@ -8,19 +8,19 @@ async function main() {
     const chainId = await getChainId();
 
     const deploymentsAll = await deployments.all();
-    const dETH = await ethers.getContractAt("dETH", deploymentsAll.dETH.address);
+    const aETH = await ethers.getContractAt("aETH", deploymentsAll.aETH.address);
 
-    const owner = await dETH.owner();
+    const owner = await aETH.owner();
     const deployer = (await getNamedAccounts()).deployer;
     const send = owner == deployer;
 
     const managers = [deploymentsAll.CorePrimary.address];
-    const currentManagers = await dETH.managers();
+    const currentManagers = await aETH.managers();
     await Promise.all(
         managers.map(async (manager) => {
             if (!currentManagers.includes(manager as string)) {
-                console.log(`dETH addManager: ${manager}\n`);
-                await sendTransaction(dETH, "_addManager", [manager], send);
+                console.log(`aETH addManager: ${manager}\n`);
+                await sendTransaction(aETH, "_addManager", [manager], send);
             }
         })
     );
@@ -29,13 +29,13 @@ async function main() {
     const mintCaps = [ethers.utils.parseEther(deployInfo[network[chainId]].strategy.Lido.mintCap)];
     await Promise.all(
         minters.map(async (minter, index) => {
-            const currentMintCap = await dETH.mintCap(minter);
+            const currentMintCap = await aETH.mintCap(minter);
             const mintCap = mintCaps[index];
             if (!currentMintCap.eq(mintCap)) {
                 console.log(`set minter cap:`);
                 console.log(`minter:    ${minter}`);
                 console.log(`cap:       ${mintCap.toString()}`);
-                await sendTransaction(dETH, "_setMinterCap", [minter, mintCap], send);
+                await sendTransaction(aETH, "_setMinterCap", [minter, mintCap], send);
             }
         })
     );

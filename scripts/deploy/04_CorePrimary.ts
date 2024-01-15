@@ -7,8 +7,8 @@ module.exports = async ({ deployments, getChainId }) => {
     const deploymentsAll = await deployments.all();
     const args = [
         deployInfo[network[chainId]].DepositContract,
-        deploymentsAll.dETH.address,
-        deploymentsAll.sdETH.address,
+        deploymentsAll.aETH.address,
+        deploymentsAll.saETH.address,
     ];
 
     await deployProxy("CorePrimary", "CorePrimary", args, "initialize()", [], false);

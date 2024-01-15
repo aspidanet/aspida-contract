@@ -14,7 +14,7 @@ contract MockCore is ICore {
         _amount;
     }
 
-    function dETH() external pure override returns (address) {
+    function aETH() external pure override returns (address) {
         return address(0);
     }
 

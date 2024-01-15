@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../interface/IdETH.sol";
-import "../interface/IsdETH.sol";
+import "../interface/IaETH.sol";
+import "../interface/IsaETH.sol";
 
 /**
  * @title Aspida's Submit model
- * @dev This contract allows users to submit ETH and mint dETH tokens in return.
- * Users can also submit ETH and stake it to receive sdETH tokens.
+ * @dev This contract allows users to submit ETH and mint aETH tokens in return.
+ * Users can also submit ETH and stake it to receive saETH tokens.
  * @author Aspida engineer
  */
 abstract contract Submit {
-    IdETH internal immutable DETH; // dETH token contract
-    IsdETH internal immutable SDETH; // sdETH token contract
+    IaETH internal immutable AETH; // aETH token contract
+    IsaETH internal immutable SAETH; // saETH token contract
 
     uint256 internal submitted_; // total amount of ETH submitted
 
@@ -21,14 +21,14 @@ abstract contract Submit {
      */
     event Submitted(address sender, address recipient, uint256 ethValue);
 
-    constructor(IdETH _dETH, IsdETH _sdETH) {
-        DETH = _dETH;
-        SDETH = _sdETH;
+    constructor(IaETH _aETH, IsaETH _saETH) {
+        AETH = _aETH;
+        SAETH = _saETH;
     }
 
     /**
-     * @dev Internal function to submit ETH and mint dETH tokens
-     * @param _receiver The address of the receiver of the dETH tokens
+     * @dev Internal function to submit ETH and mint aETH tokens
+     * @param _receiver The address of the receiver of the aETH tokens
      */
     function _submit(address _receiver) internal virtual {
         uint256 _ethValue = msg.value;
@@ -36,50 +36,50 @@ abstract contract Submit {
 
         submitted_ += _ethValue;
 
-        DETH.mint(_receiver, _ethValue);
+        AETH.mint(_receiver, _ethValue);
         emit Submitted(msg.sender, _receiver, _ethValue);
     }
 
     /**
-     * @dev External function to submit ETH and mint dETH tokens
+     * @dev External function to submit ETH and mint aETH tokens
      */
     function submit() external payable {
         _submit(msg.sender);
     }
 
     /**
-     * @dev External function to submit ETH and mint dETH tokens for a specific receiver
-     * @param _receiver The address of the receiver of the dETH tokens
+     * @dev External function to submit ETH and mint aETH tokens for a specific receiver
+     * @param _receiver The address of the receiver of the aETH tokens
      */
     function submit(address _receiver) external payable {
         _submit(_receiver);
     }
 
     /**
-     * @dev External function to submit ETH, mint dETH tokens and stake them to receive sdETH tokens
-     * @param _receiver The address of the receiver of the sdETH tokens
+     * @dev External function to submit ETH, mint aETH tokens and stake them to receive saETH tokens
+     * @param _receiver The address of the receiver of the saETH tokens
      */
     function submitAndStake(address _receiver) external payable {
         _submit(address(this));
 
-        DETH.approve(address(SDETH), msg.value);
-        require(SDETH.deposit(msg.value, _receiver) > 0, "No sdETH was returned");
+        AETH.approve(address(SAETH), msg.value);
+        require(SAETH.deposit(msg.value, _receiver) > 0, "No saETH was returned");
     }
 
     /**
-     * @dev External function to return the dETH token contract
-     * @return The dETH token contract
+     * @dev External function to return the aETH token contract
+     * @return The aETH token contract
      */
-    function dETH() external view returns (IdETH) {
-        return DETH;
+    function aETH() external view returns (IaETH) {
+        return AETH;
     }
 
     /**
-     * @dev External function to return the sdETH token contract
-     * @return The sdETH token contract
+     * @dev External function to return the saETH token contract
+     * @return The saETH token contract
      */
-    function sdETH() external view returns (IsdETH) {
-        return SDETH;
+    function saETH() external view returns (IsaETH) {
+        return SAETH;
     }
 
     /**

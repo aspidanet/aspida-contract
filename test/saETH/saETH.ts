@@ -22,8 +22,8 @@ export interface ActionTestData {
     manager: Signer;
     pauseGuardian: Signer;
     accounts: Signer[];
-    dETH: Contract;
-    sdETH: Contract;
+    aETH: Contract;
+    saETH: Contract;
 }
 
 export interface State {
@@ -42,9 +42,9 @@ export interface State {
 
 export interface UserState {
     address: string;
-    dETHBalance: BigNumber;
-    sdETHBalance: BigNumber;
-    sdETHBalanceUnderlying: BigNumber;
+    aETHBalance: BigNumber;
+    saETHBalance: BigNumber;
+    saETHBalanceUnderlying: BigNumber;
 }
 
 export interface Action {
@@ -54,8 +54,8 @@ export interface Action {
 }
 
 export interface Args {
-    dETHAmount: BigNumber;
-    sdETHAmount: BigNumber;
+    aETHAmount: BigNumber;
+    saETHAmount: BigNumber;
     receiver: string;
     owner: string;
 }
@@ -63,9 +63,9 @@ export interface Args {
 export function copyUserState(userState: UserState): UserState {
     const result: UserState = {
         address: userState.address,
-        dETHBalance: userState.dETHBalance,
-        sdETHBalance: userState.sdETHBalance,
-        sdETHBalanceUnderlying: userState.sdETHBalanceUnderlying,
+        aETHBalance: userState.aETHBalance,
+        saETHBalance: userState.saETHBalance,
+        saETHBalanceUnderlying: userState.saETHBalanceUnderlying,
     };
     return result;
 }
@@ -90,37 +90,37 @@ export function copyState(state: State): State {
     return result;
 }
 
-export async function getUserState(sdETH: Contract, user: Signer) {
+export async function getUserState(saETH: Contract, user: Signer) {
     const userAddress = await user.getAddress();
 
-    const dETH = await ethers.getContractAt("dETH", await sdETH.asset());
+    const aETH = await ethers.getContractAt("aETH", await saETH.asset());
     const userState: UserState = {
         address: userAddress,
-        dETHBalance: await dETH.balanceOf(userAddress),
-        sdETHBalance: await sdETH.balanceOf(userAddress),
-        sdETHBalanceUnderlying: await sdETH.maxWithdraw(userAddress),
+        aETHBalance: await aETH.balanceOf(userAddress),
+        saETHBalance: await saETH.balanceOf(userAddress),
+        saETHBalanceUnderlying: await saETH.maxWithdraw(userAddress),
     };
     return userState;
 }
 
-export async function getState(sdETH: Contract, sender: Signer, receiver: Signer, owner: Signer) {
-    const senderState = await getUserState(sdETH, sender);
-    const receiverState = await getUserState(sdETH, receiver);
-    const ownerState = await getUserState(sdETH, owner);
+export async function getState(saETH: Contract, sender: Signer, receiver: Signer, owner: Signer) {
+    const senderState = await getUserState(saETH, sender);
+    const receiverState = await getUserState(saETH, receiver);
+    const ownerState = await getUserState(saETH, owner);
 
-    const dETH = await ethers.getContractAt("dETH", await sdETH.asset());
+    const aETH = await ethers.getContractAt("aETH", await saETH.asset());
 
     const state: State = {
         sender: senderState.address,
         receiver: receiverState.address,
         owner: ownerState.address,
-        totalSupply: await sdETH.totalSupply(),
-        totalAssets: await sdETH.totalAssets(),
-        totalUnderlying: await dETH.balanceOf(sdETH.address),
-        duration: await sdETH.duration(),
-        rewardRate: await sdETH.rewardRate(),
-        periodFinish: await sdETH.periodFinish(),
-        lastUpdateTime: await sdETH.lastUpdateTime(),
+        totalSupply: await saETH.totalSupply(),
+        totalAssets: await saETH.totalAssets(),
+        totalUnderlying: await aETH.balanceOf(saETH.address),
+        duration: await saETH.duration(),
+        rewardRate: await saETH.rewardRate(),
+        periodFinish: await saETH.periodFinish(),
+        lastUpdateTime: await saETH.lastUpdateTime(),
         account: {
             [senderState.address]: senderState,
             [ownerState.address]: ownerState,
@@ -170,32 +170,36 @@ export function calcUpdatedData(state: State, timestamp: BigNumber) {
     };
 }
 
-export async function executeAndCalcExpected(sdETH: Contract, preState: State, action: Action) {
+export async function executeAndCalcExpected(saETH: Contract, preState: State, action: Action) {
     let expected: State = preState;
     switch (action.func) {
         case "deposit(uint256,address)":
-            await sdETH.connect(action.sender)[action.func](action.args.dETHAmount, action.args.receiver);
+            await saETH.connect(action.sender)[action.func](action.args.aETHAmount, action.args.receiver);
             expected = await calcExpectedDeposit(preState, action);
             break;
         case "withdraw(uint256,address,address)":
-            await sdETH
+            await saETH
                 .connect(action.sender)
-                [action.func](action.args.dETHAmount, action.args.receiver, action.args.owner);
+                [action.func](action.args.aETHAmount, action.args.receiver, action.args.owner);
             expected = await calcExpectedWithdraw(preState, action);
             break;
         case "mint(uint256,address)":
-            await sdETH.connect(action.sender)[action.func](action.args.sdETHAmount, action.args.receiver);
+            await saETH.connect(action.sender)[action.func](action.args.saETHAmount, action.args.receiver);
             expected = await calcExpectedMint(preState, action);
             break;
         case "redeem(uint256,address,address)":
-            await sdETH
+            await saETH
                 .connect(action.sender)
-                [action.func](action.args.sdETHAmount, action.args.receiver, action.args.owner);
+                [action.func](action.args.saETHAmount, action.args.receiver, action.args.owner);
             expected = await calcExpectedRedeem(preState, action);
             break;
         default:
             break;
     }
+    // console.log(`\nrewardRate:----------------`);
+    // console.log(`pre rewardRate:        ${preState.rewardRate}`);
+    // console.log(`expected rewardRate:   ${expected.rewardRate}`);
+    // console.log(`rewardRate:----------------end\n`);
     return expected;
 }
 
@@ -215,25 +219,25 @@ export async function calcExpectedDeposit(preState: State, action: Action) {
     expected.periodFinish = updatedData.periodFinish;
     expected.lastUpdateTime = timestamp;
 
-    const increaseShares = convertToShares(preState.totalSupply, expected.totalAssets, action.args.dETHAmount, false);
+    const increaseShares = convertToShares(preState.totalSupply, expected.totalAssets, action.args.aETHAmount, false);
 
     expected.totalSupply = preState.totalSupply.add(increaseShares);
-    expected.totalAssets = expected.totalAssets.add(action.args.dETHAmount);
-    expected.totalUnderlying = preState.totalUnderlying.add(action.args.dETHAmount);
+    expected.totalAssets = expected.totalAssets.add(action.args.aETHAmount);
+    expected.totalUnderlying = preState.totalUnderlying.add(action.args.aETHAmount);
 
-    expected.account[sender].dETHBalance = preState.account[sender].dETHBalance.sub(action.args.dETHAmount);
-    expected.account[sender].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[sender].aETHBalance = preState.account[sender].aETHBalance.sub(action.args.aETHAmount);
+    expected.account[sender].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[sender].sdETHBalance,
+        expected.account[sender].saETHBalance,
         false
     );
 
-    expected.account[receiver].sdETHBalance = preState.account[receiver].sdETHBalance.add(increaseShares);
-    expected.account[receiver].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[receiver].saETHBalance = preState.account[receiver].saETHBalance.add(increaseShares);
+    expected.account[receiver].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[receiver].sdETHBalance,
+        expected.account[receiver].saETHBalance,
         false
     );
 
@@ -258,25 +262,25 @@ export async function calcExpectedMint(preState: State, action: Action) {
     expected.periodFinish = updatedData.periodFinish;
     expected.lastUpdateTime = timestamp;
 
-    const increaseAssets = convertToAssets(preState.totalSupply, expected.totalAssets, action.args.sdETHAmount, true);
+    const increaseAssets = convertToAssets(preState.totalSupply, expected.totalAssets, action.args.saETHAmount, true);
 
-    expected.totalSupply = preState.totalSupply.add(action.args.sdETHAmount);
+    expected.totalSupply = preState.totalSupply.add(action.args.saETHAmount);
     expected.totalAssets = expected.totalAssets.add(increaseAssets);
     expected.totalUnderlying = preState.totalUnderlying.add(increaseAssets);
 
-    expected.account[sender].dETHBalance = preState.account[sender].dETHBalance.sub(increaseAssets);
-    expected.account[sender].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[sender].aETHBalance = preState.account[sender].aETHBalance.sub(increaseAssets);
+    expected.account[sender].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[sender].sdETHBalance,
+        expected.account[sender].saETHBalance,
         false
     );
 
-    expected.account[receiver].sdETHBalance = preState.account[receiver].sdETHBalance.add(action.args.sdETHAmount);
-    expected.account[receiver].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[receiver].saETHBalance = preState.account[receiver].saETHBalance.add(action.args.saETHAmount);
+    expected.account[receiver].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[receiver].sdETHBalance,
+        expected.account[receiver].saETHBalance,
         false
     );
 
@@ -301,31 +305,31 @@ export async function calcExpectedWithdraw(preState: State, action: Action) {
     expected.periodFinish = updatedData.periodFinish;
     expected.lastUpdateTime = timestamp;
 
-    const decreaseShares = convertToShares(preState.totalSupply, expected.totalAssets, action.args.dETHAmount, true);
+    const decreaseShares = convertToShares(preState.totalSupply, expected.totalAssets, action.args.aETHAmount, true);
     expected.totalSupply = preState.totalSupply.sub(decreaseShares);
-    expected.totalAssets = expected.totalSupply.eq(ZERO) ? ZERO : expected.totalAssets.sub(action.args.dETHAmount);
-    expected.totalUnderlying = preState.totalUnderlying.sub(action.args.dETHAmount);
+    expected.totalAssets = expected.totalSupply.eq(ZERO) ? ZERO : expected.totalAssets.sub(action.args.aETHAmount);
+    expected.totalUnderlying = preState.totalUnderlying.sub(action.args.aETHAmount);
 
-    expected.account[sender].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[sender].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[sender].sdETHBalance,
+        expected.account[sender].saETHBalance,
         false
     );
 
-    expected.account[receiver].dETHBalance = preState.account[receiver].dETHBalance.add(action.args.dETHAmount);
-    expected.account[receiver].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[receiver].aETHBalance = preState.account[receiver].aETHBalance.add(action.args.aETHAmount);
+    expected.account[receiver].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[receiver].sdETHBalance,
+        expected.account[receiver].saETHBalance,
         false
     );
 
-    expected.account[owner].sdETHBalance = preState.account[owner].sdETHBalance.sub(decreaseShares);
-    expected.account[owner].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[owner].saETHBalance = preState.account[owner].saETHBalance.sub(decreaseShares);
+    expected.account[owner].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[owner].sdETHBalance,
+        expected.account[owner].saETHBalance,
         false
     );
 
@@ -353,34 +357,34 @@ export async function calcExpectedRedeem(preState: State, action: Action) {
     const decreaseAssets = convertToAssets(
         preState.totalSupply,
         preState.totalAssets.add(increaseRewards),
-        action.args.sdETHAmount,
+        action.args.saETHAmount,
         false
     );
 
-    expected.totalSupply = preState.totalSupply.sub(action.args.sdETHAmount);
+    expected.totalSupply = preState.totalSupply.sub(action.args.saETHAmount);
     expected.totalAssets = expected.totalSupply.eq(ZERO) ? ZERO : expected.totalAssets.sub(decreaseAssets);
     expected.totalUnderlying = preState.totalUnderlying.sub(decreaseAssets);
 
-    expected.account[sender].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[sender].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[sender].sdETHBalance,
+        expected.account[sender].saETHBalance,
         false
     );
 
-    expected.account[receiver].dETHBalance = preState.account[receiver].dETHBalance.add(decreaseAssets);
-    expected.account[receiver].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[receiver].aETHBalance = preState.account[receiver].aETHBalance.add(decreaseAssets);
+    expected.account[receiver].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[receiver].sdETHBalance,
+        expected.account[receiver].saETHBalance,
         false
     );
 
-    expected.account[owner].sdETHBalance = preState.account[owner].sdETHBalance.sub(action.args.sdETHAmount);
-    expected.account[owner].sdETHBalanceUnderlying = convertToAssets(
+    expected.account[owner].saETHBalance = preState.account[owner].saETHBalance.sub(action.args.saETHAmount);
+    expected.account[owner].saETHBalanceUnderlying = convertToAssets(
         expected.totalSupply,
         expected.totalAssets,
-        expected.account[owner].sdETHBalance,
+        expected.account[owner].saETHBalance,
         false
     );
 

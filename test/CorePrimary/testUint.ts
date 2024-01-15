@@ -38,8 +38,8 @@ describe("Test CorePrimary unit test", () => {
     let pauseGuardian: Signer;
     let accounts: Signer[];
 
-    let dETH: Contract;
-    let sdETH: Contract;
+    let aETH: Contract;
+    let saETH: Contract;
     let CorePrimary: Contract;
 
     async function init() {
@@ -48,11 +48,11 @@ describe("Test CorePrimary unit test", () => {
         manager = initData.manager;
         pauseGuardian = initData.pauseGuardian;
         accounts = initData.accounts;
-        dETH = initData.dETH;
-        sdETH = initData.sdETH;
+        aETH = initData.aETH;
+        saETH = initData.saETH;
         CorePrimary = initData.CorePrimary;
 
-        await dETH._addManager(await owner.getAddress());
+        await aETH._addManager(await owner.getAddress());
     }
 
     before(async function () {
@@ -60,9 +60,9 @@ describe("Test CorePrimary unit test", () => {
         const mintAmount = utils.parseEther("10000");
         for (let index = 0; index < accounts.length; index++) {
             const accountAddr = await accounts[index].getAddress();
-            // await dETH.mint(accountAddr, mintAmount);
-            await dETH.connect(accounts[index]).approve(CorePrimary.address, MAX);
-            await sdETH.connect(accounts[index]).approve(CorePrimary.address, MAX);
+            // await aETH.mint(accountAddr, mintAmount);
+            await aETH.connect(accounts[index]).approve(CorePrimary.address, MAX);
+            await saETH.connect(accounts[index]).approve(CorePrimary.address, MAX);
         }
     });
 

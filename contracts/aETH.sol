@@ -2,7 +2,7 @@
 pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 
 import "./library/PauseGuardian.sol";
 import "./library/Manable.sol";
@@ -14,7 +14,7 @@ import "./library/Minter.sol";
  * @dev This contract extends multiple OpenZeppelin contracts to add additional functionality.
  * @author Aspida engineer
  */
-contract dETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable, Manable, Minter {
+contract aETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable, Manable, Minter {
     /**
      * @notice Only for the implementation contract, as for the proxy pattern,
      *            should call `initialize()` separately.
@@ -24,8 +24,8 @@ contract dETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable,
     }
 
     /**
-     * @notice Initializes the dETH contract.
-     * @dev This function should be called only once to initialize dETH.
+     * @notice Initializes the aETH contract.
+     * @dev This function should be called only once to initialize aETH.
      * It initializes the contract as Ownable, sets the name and symbol of the token, and initializes the permit functionality.
      * @param _name The name of the token.
      * @param _symbol The symbol of the token.
@@ -37,7 +37,7 @@ contract dETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable,
     }
 
     /**
-     * @dev Unpauses the dETH contract.
+     * @dev Unpauses the aETH contract.
      * @notice This function can only be called by the contract owner.
      */
     function _open() external onlyOwner {
@@ -45,7 +45,7 @@ contract dETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable,
     }
 
     /**
-     * @dev Pauses the dETH contract.
+     * @dev Pauses the aETH contract.
      * @notice This function can only be called by the pause guardian.
      */
     function _close() external onlyPauseGuardian {
@@ -149,7 +149,7 @@ contract dETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable,
      * @param _amount The amount of tokens to burn.
      * @dev This function allows burning tokens from another account if the sender has the necessary allowance.
      */
-    function burnFrom(address _account, uint256 _amount) external {
+    function burnFrom(address _account, uint256 _amount) external onlyManager {
         address _sender = msg.sender;
         if (_sender != _account) _spendAllowance(_account, _sender, _amount);
         _burn(_account, _amount);

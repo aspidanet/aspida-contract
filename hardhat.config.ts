@@ -54,7 +54,7 @@ const config: HardhatUserConfig = {
         runOnCompile: true,
         clear: true,
         flat: true,
-        only: ["dETH", "sdETH", "CorePrimary", "StrategyLido", "RewardOracle", "StETHMinter"],
+        only: ["aETH", "saETH", "CorePrimary", "StrategyLido", "RewardOracle", "StETHMinter"],
         spacing: 2,
         pretty: false,
     },

@@ -2,21 +2,21 @@
 pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 
 import "./library/PauseGuardian.sol";
 
-import "./interface/IdETH.sol";
+import "./interface/IaETH.sol";
 
 /**
- * @title Aspida's vault token for staked dETH
- * @dev sdETH is a contract that represents a token for staked dETH.
+ * @title Aspida's vault token for staked aETH
+ * @dev saETH is a contract that represents a token for staked aETH.
  * It inherits from Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable, and ERC4626Upgradeable.
  * It has several internal variables and events that are used to keep track of the contract's state.
  * It also has several internal functions that are used to update the contract's state.
  */
-contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable, ERC4626Upgradeable {
+contract saETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable, ERC4626Upgradeable {
     uint256 internal duration_;
     uint256 internal rewardRate_;
     uint256 internal periodFinish_;
@@ -51,33 +51,33 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
     }
 
     /**
-     * @notice Initializes the sdETH contract.
-     * @dev This function should be called only once to initialize sdETH.
+     * @notice Initializes the saETH contract.
+     * @dev This function should be called only once to initialize saETH.
      * It initializes the contract as Ownable, sets the name and symbol of the token, initializes the permit functionality, and sets the initial reward duration and period.
      * @param _name The name of the token.
      * @param _symbol The symbol of the token.
-     * @param _dETH The address of the dETH contract.
+     * @param _aETH The address of the aETH contract.
      */
-    function initialize(string memory _name, string memory _symbol, IERC20Upgradeable _dETH) public initializer {
+    function initialize(string memory _name, string memory _symbol, IERC20Upgradeable _aETH) public initializer {
         __Ownable2Step_init();
         __Pausable_init();
         __ERC20_init(_name, _symbol);
         __ERC20Permit_init(_name);
-        __ERC4626_init(_dETH);
+        __ERC4626_init(_aETH);
         _setDurationInternal(1 weeks);
         _updateReward(block.timestamp);
         _updatePeriodFinish(1 weeks);
     }
 
     /**
-     * @dev Unpause when sdETH is paused.
+     * @dev Unpause when saETH is paused.
      */
     function _open() external onlyOwner {
         _unpause();
     }
 
     /**
-     * @dev Pause sdETH.
+     * @dev Pause saETH.
      */
     function _close() external onlyPauseGuardian {
         _pause();
@@ -276,7 +276,7 @@ contract sdETH is Ownable2StepUpgradeable, PauseGuardian, ERC20PermitUpgradeable
         bytes32 _s
     ) external returns (uint256) {
         uint256 _amount = _approveMax ? type(uint256).max : _assets;
-        IdETH(asset()).permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s);
+        IaETH(asset()).permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s);
         return deposit(_assets, _receiver);
     }
 

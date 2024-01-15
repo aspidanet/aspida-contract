@@ -6,11 +6,11 @@ module.exports = async ({ deployments, getChainId }) => {
 
     const deploymentsAll = await deployments.all();
     const args = [
-        deployInfo[network[chainId]].sdETH.name,
-        deployInfo[network[chainId]].sdETH.symbol,
-        deploymentsAll.dETH.address,
+        deployInfo[network[chainId]].saETH.name,
+        deployInfo[network[chainId]].saETH.symbol,
+        deploymentsAll.aETH.address,
     ];
 
-    await deployProxy("sdETH", "sdETH", [], "initialize(string,string,address)", args, false);
+    await deployProxy("saETH", "saETH", [], "initialize(string,string,address)", args, false);
 };
-module.exports.tags = ["sdETH"];
+module.exports.tags = ["saETH"];

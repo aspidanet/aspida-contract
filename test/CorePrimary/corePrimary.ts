@@ -22,8 +22,8 @@ export interface ActionTestData {
     manager: Signer;
     pauseGuardian: Signer;
     accounts: Signer[];
-    dETH: Contract;
-    sdETH: Contract;
+    aETH: Contract;
+    saETH: Contract;
     CorePrimary: Contract;
 }
 
@@ -31,8 +31,8 @@ export interface State {
     sender: string;
     receiver: string;
     balance: BigNumber;
-    dETHTotalSupply: BigNumber;
-    sdETHTotalSupply: BigNumber;
+    aETHTotalSupply: BigNumber;
+    saETHTotalSupply: BigNumber;
     submitted: BigNumber;
     reserveRatio: BigNumber;
     strategyReserve: BigNumber;
@@ -86,8 +86,8 @@ export function copyState(state: State): State {
         sender: state.sender,
         receiver: state.receiver,
         balance: state.balance,
-        dETHTotalSupply: state.dETHTotalSupply,
-        sdETHTotalSupply: state.sdETHTotalSupply,
+        aETHTotalSupply: state.aETHTotalSupply,
+        saETHTotalSupply: state.saETHTotalSupply,
         submitted: state.submitted,
         strategyReserve: state.strategyReserve,
         reserveRatio: state.reserveRatio,
@@ -133,8 +133,8 @@ export async function getState(CorePrimary: Contract, sender: Signer, receiver: 
     const senderState = await getUserState(CorePrimary, sender);
     const receiverState = await getUserState(CorePrimary, receiver);
 
-    const dETH = await ethers.getContractAt("dETH", await CorePrimary.dETH());
-    const sdETH = await ethers.getContractAt("sdETH", await CorePrimary.sdETH());
+    const aETH = await ethers.getContractAt("aETH", await CorePrimary.aETH());
+    const saETH = await ethers.getContractAt("saETH", await CorePrimary.saETH());
 
     const timestamp = utils.parseUnits((await getCurrentTime()).toString(), 0);
     const index = timestamp.div(DAY);
@@ -143,8 +143,8 @@ export async function getState(CorePrimary: Contract, sender: Signer, receiver: 
         sender: senderState.address,
         receiver: receiverState.address,
         balance: await CorePrimary.provider.getBalance(CorePrimary.address),
-        dETHTotalSupply: await dETH.totalSupply(),
-        sdETHTotalSupply: await sdETH.totalAssets(),
+        aETHTotalSupply: await aETH.totalSupply(),
+        saETHTotalSupply: await saETH.totalAssets(),
         submitted: await CorePrimary.submitted(),
         strategyReserve: await CorePrimary.strategyReserve(),
         reserveRatio: await CorePrimary.reserveRatio(),
@@ -196,14 +196,14 @@ export function increaseReserves(reserveRatio: BigNumber, ethValue: BigNumber) {
 
 export async function executeAndCalcExpected(CorePrimary: Contract, preState: State, action: Action): Promise<State> {
     let expected: State = preState;
-    const dETH = await ethers.getContractAt("dETH", await CorePrimary.dETH());
-    const sdETH = await ethers.getContractAt("sdETH", await CorePrimary.sdETH());
+    const aETH = await ethers.getContractAt("aETH", await CorePrimary.aETH());
+    const saETH = await ethers.getContractAt("saETH", await CorePrimary.saETH());
     const lock = preState.pendingClaimAmount.add(preState.strategyReserve);
     const claimable = preState.balance.add(preState.totalClaimed).sub(preState.strategyReserve);
     let claimResult: ClaimResult;
     let tx: any;
     let senderETHChange: BigNumber;
-    let senderdETHChange: BigNumber;
+    let senderaETHChange: BigNumber;
     let withdrawable = false;
 
     switch (action.func) {
@@ -214,11 +214,11 @@ export async function executeAndCalcExpected(CorePrimary: Contract, preState: St
                 [action.args.ethValue, action.args.ethValue.mul(NegativeOne)]
             );
             await expect(tx).to.changeTokenBalances(
-                dETH,
+                aETH,
                 [CorePrimary.address, preState.sender],
                 [ZERO, action.args.ethValue]
             );
-            await expect(tx).to.changeTokenBalances(sdETH, [CorePrimary.address, preState.sender], [ZERO, ZERO]);
+            await expect(tx).to.changeTokenBalances(saETH, [CorePrimary.address, preState.sender], [ZERO, ZERO]);
             expected = await calcExpectedSubmit(preState, action);
             break;
         case "submit(address)":
@@ -233,12 +233,12 @@ export async function executeAndCalcExpected(CorePrimary: Contract, preState: St
                 [action.args.ethValue, senderETHChange, preState.sender == preState.receiver ? senderETHChange : ZERO]
             );
             await expect(tx).to.changeTokenBalances(
-                dETH,
+                aETH,
                 [CorePrimary.address, preState.sender, preState.receiver],
                 [ZERO, preState.sender == preState.receiver ? action.args.ethValue : ZERO, action.args.ethValue]
             );
             await expect(tx).to.changeTokenBalances(
-                sdETH,
+                saETH,
                 [CorePrimary.address, preState.sender, preState.receiver],
                 [ZERO, ZERO, ZERO]
             );
@@ -256,40 +256,40 @@ export async function executeAndCalcExpected(CorePrimary: Contract, preState: St
                 [action.args.ethValue, senderETHChange, preState.sender == preState.receiver ? senderETHChange : ZERO]
             );
             await expect(tx).to.changeTokenBalances(
-                dETH,
+                aETH,
                 [CorePrimary.address, preState.sender, preState.receiver],
                 [ZERO, ZERO, ZERO]
             );
             await expect(tx).to.changeTokenBalances(
-                sdETH,
+                saETH,
                 [CorePrimary.address, preState.sender, preState.receiver],
                 [ZERO, preState.sender == preState.receiver ? action.args.ethValue : ZERO, action.args.ethValue]
             );
             expected = await calcExpectedSubmitAndStake(preState, action);
             break;
         case "withdraw(uint256)":
-            tx = await CorePrimary.connect(action.sender)[action.func](action.args.dETHAmount);
+            tx = await CorePrimary.connect(action.sender)[action.func](action.args.aETHAmount);
 
-            withdrawable = preState.balance.gte(lock.add(action.args.dETHAmount));
-            senderETHChange = withdrawable ? action.args.dETHAmount : ZERO;
+            withdrawable = preState.balance.gte(lock.add(action.args.aETHAmount));
+            senderETHChange = withdrawable ? action.args.aETHAmount : ZERO;
 
             await expect(tx).to.changeEtherBalances(
                 [CorePrimary.address, preState.sender],
                 [senderETHChange.mul(NegativeOne), senderETHChange]
             );
             await expect(tx).to.changeTokenBalances(
-                dETH,
+                aETH,
                 [CorePrimary.address, preState.sender],
-                [ZERO, action.args.dETHAmount.mul(NegativeOne)]
+                [ZERO, action.args.aETHAmount.mul(NegativeOne)]
             );
-            await expect(tx).to.changeTokenBalances(sdETH, [CorePrimary.address, preState.sender], [ZERO, ZERO]);
+            await expect(tx).to.changeTokenBalances(saETH, [CorePrimary.address, preState.sender], [ZERO, ZERO]);
             expected = await calcExpectedWithdraw(preState, action);
             break;
         case "withdraw(uint256,address)":
-            tx = await CorePrimary.connect(action.sender)[action.func](action.args.dETHAmount, action.args.receiver);
+            tx = await CorePrimary.connect(action.sender)[action.func](action.args.aETHAmount, action.args.receiver);
 
-            withdrawable = preState.balance.gte(lock.add(action.args.dETHAmount));
-            senderETHChange = withdrawable ? action.args.dETHAmount : ZERO;
+            withdrawable = preState.balance.gte(lock.add(action.args.aETHAmount));
+            senderETHChange = withdrawable ? action.args.aETHAmount : ZERO;
 
             await expect(tx).to.changeEtherBalances(
                 [CorePrimary.address, preState.sender, preState.receiver],
@@ -300,54 +300,54 @@ export async function executeAndCalcExpected(CorePrimary: Contract, preState: St
                 ]
             );
             await expect(tx).to.changeTokenBalances(
-                dETH,
+                aETH,
                 [CorePrimary.address, preState.sender, preState.receiver],
                 [
                     ZERO,
-                    action.args.dETHAmount.mul(NegativeOne),
-                    preState.sender == preState.receiver ? action.args.dETHAmount.mul(NegativeOne) : ZERO,
+                    action.args.aETHAmount.mul(NegativeOne),
+                    preState.sender == preState.receiver ? action.args.aETHAmount.mul(NegativeOne) : ZERO,
                 ]
             );
             await expect(tx).to.changeTokenBalances(
-                sdETH,
+                saETH,
                 [CorePrimary.address, preState.sender, preState.receiver],
                 [ZERO, ZERO, ZERO]
             );
             expected = await calcExpectedWithdraw(preState, action);
             break;
         case "redeemUnderlyingAndWithdraw(uint256)":
-            tx = await CorePrimary.connect(action.sender)[action.func](action.args.dETHAmount);
+            tx = await CorePrimary.connect(action.sender)[action.func](action.args.aETHAmount);
 
-            withdrawable = preState.balance.gte(lock.add(action.args.dETHAmount));
-            senderETHChange = withdrawable ? action.args.dETHAmount : ZERO;
+            withdrawable = preState.balance.gte(lock.add(action.args.aETHAmount));
+            senderETHChange = withdrawable ? action.args.aETHAmount : ZERO;
 
             await expect(tx).to.changeEtherBalances(
                 [CorePrimary.address, preState.sender],
                 [senderETHChange.mul(NegativeOne), senderETHChange]
             );
-            await expect(tx).to.changeTokenBalances(dETH, [CorePrimary.address, preState.sender], [ZERO, ZERO]);
+            await expect(tx).to.changeTokenBalances(aETH, [CorePrimary.address, preState.sender], [ZERO, ZERO]);
             await expect(tx).to.changeTokenBalances(
-                sdETH,
+                saETH,
                 [CorePrimary.address, preState.sender],
-                [ZERO, action.args.dETHAmount.mul(NegativeOne)]
+                [ZERO, action.args.aETHAmount.mul(NegativeOne)]
             );
             expected = await calcExpectedRedeemAndWithdraw(preState, action);
             break;
         case "redeemAndWithdraw(uint256)":
-            tx = await CorePrimary.connect(action.sender)[action.func](action.args.sdETHAmount);
+            tx = await CorePrimary.connect(action.sender)[action.func](action.args.saETHAmount);
 
-            withdrawable = preState.balance.gte(lock.add(action.args.sdETHAmount));
-            senderETHChange = withdrawable ? action.args.sdETHAmount : ZERO;
+            withdrawable = preState.balance.gte(lock.add(action.args.saETHAmount));
+            senderETHChange = withdrawable ? action.args.saETHAmount : ZERO;
 
             await expect(tx).to.changeEtherBalances(
                 [CorePrimary.address, preState.sender],
                 [senderETHChange.mul(NegativeOne), senderETHChange]
             );
-            await expect(tx).to.changeTokenBalances(dETH, [CorePrimary.address, preState.sender], [ZERO, ZERO]);
+            await expect(tx).to.changeTokenBalances(aETH, [CorePrimary.address, preState.sender], [ZERO, ZERO]);
             await expect(tx).to.changeTokenBalances(
-                sdETH,
+                saETH,
                 [CorePrimary.address, preState.sender],
-                [ZERO, action.args.sdETHAmount.mul(NegativeOne)]
+                [ZERO, action.args.saETHAmount.mul(NegativeOne)]
             );
             expected = await calcExpectedRedeemAndWithdraw(preState, action);
             break;
@@ -421,7 +421,7 @@ export async function calcExpectedSubmit(preState: State, action: Action): Promi
     let expected: State = copyState(preState);
 
     expected.balance = preState.balance.add(action.args.ethValue);
-    expected.dETHTotalSupply = preState.dETHTotalSupply.add(action.args.ethValue);
+    expected.aETHTotalSupply = preState.aETHTotalSupply.add(action.args.ethValue);
     expected.submitted = preState.submitted.add(action.args.ethValue);
 
     const increaseReserve = increaseReserves(preState.reserveRatio, action.args.ethValue);
@@ -432,7 +432,7 @@ export async function calcExpectedSubmit(preState: State, action: Action): Promi
 
 export async function calcExpectedSubmitAndStake(preState: State, action: Action): Promise<State> {
     let expected: State = await calcExpectedSubmit(preState, action);
-    expected.sdETHTotalSupply = preState.sdETHTotalSupply.add(action.args.ethValue);
+    expected.saETHTotalSupply = preState.saETHTotalSupply.add(action.args.ethValue);
 
     return expected;
 }
@@ -442,32 +442,32 @@ export async function calcExpectedWithdraw(preState: State, action: Action): Pro
     let expected: State = copyState(preState);
 
     const withdrawable = preState.balance.gte(
-        preState.pendingClaimAmount.add(preState.strategyReserve).add(action.args.dETHAmount)
+        preState.pendingClaimAmount.add(preState.strategyReserve).add(action.args.aETHAmount)
     );
 
     if (withdrawable) {
-        expected.totalWithdrawn = preState.totalWithdrawn.add(action.args.dETHAmount);
-        expected.balance = preState.balance.sub(action.args.dETHAmount);
+        expected.totalWithdrawn = preState.totalWithdrawn.add(action.args.aETHAmount);
+        expected.balance = preState.balance.sub(action.args.aETHAmount);
     } else {
         expected.lastQueueId = preState.lastQueueId.add(ONE);
-        expected.pendingClaimAmount = preState.pendingClaimAmount.add(action.args.dETHAmount);
-        expected.accumulated = preState.accumulated.add(action.args.dETHAmount);
+        expected.pendingClaimAmount = preState.pendingClaimAmount.add(action.args.aETHAmount);
+        expected.accumulated = preState.accumulated.add(action.args.aETHAmount);
         const item: ClaimData = {
             queueId: expected.lastQueueId,
-            amount: action.args.dETHAmount,
+            amount: action.args.aETHAmount,
             accumulated: expected.accumulated,
         };
         expected.account[receiver].claimData.push(item);
     }
 
-    expected.dETHTotalSupply = preState.dETHTotalSupply.sub(action.args.dETHAmount);
+    expected.aETHTotalSupply = preState.aETHTotalSupply.sub(action.args.aETHAmount);
 
     return expected;
 }
 
 export async function calcExpectedRedeemAndWithdraw(preState: State, action: Action): Promise<State> {
     let expected: State = await calcExpectedWithdraw(preState, action);
-    expected.sdETHTotalSupply = preState.sdETHTotalSupply.sub(action.args.dETHAmount);
+    expected.saETHTotalSupply = preState.saETHTotalSupply.sub(action.args.aETHAmount);
 
     return expected;
 }

@@ -68,9 +68,9 @@ contract CorePrimary is
      */
     constructor(
         IDepositContract _depositContract,
-        IdETH _dETH,
-        IsdETH _sdETH
-    ) StakingModel(_depositContract) Submit(_dETH, _sdETH) {
+        IaETH _aETH,
+        IsaETH _saETH
+    ) StakingModel(_depositContract) Submit(_aETH, _saETH) {
         _disableInitializers();
     }
 
@@ -216,6 +216,18 @@ contract CorePrimary is
     }
 
     /**
+     * @notice Recap the loss(Slashing and strategy losses).
+     * @param _loss The amount of loss
+     *
+     * Requirements:
+     * - the caller must be `owner`.
+     */
+    function _recapLoss(uint256 _loss) external onlyOwner {
+        // Burn the loss from the treasury
+        AETH.burnFrom(treasury_, _loss);
+    }
+
+    /**
      * @notice Deposits ETH into the contract for staking.
      * @param _validators The array of validators to deposit.
      */
@@ -245,10 +257,10 @@ contract CorePrimary is
         require(_amount != 0, "supplyReward: Amount cannot be 0");
 
         uint256 _treasuryAmount = _getTreasuryAmount(_amount);
-        if (_treasuryAmount > 0) DETH.mint(treasury_, _treasuryAmount);
+        if (_treasuryAmount > 0) AETH.mint(treasury_, _treasuryAmount);
 
         uint256 _reward = _amount - _treasuryAmount;
-        if (_reward > 0) DETH.mint(address(SDETH), _reward);
+        if (_reward > 0) AETH.mint(address(SAETH), _reward);
     }
 
     /**
@@ -279,7 +291,7 @@ contract CorePrimary is
         address _receiver,
         uint256 _amount
     ) internal override whenNotPaused nonReentrant {
-        DETH.burnFrom(_sender, _amount);
+        AETH.burnFrom(_sender, _amount);
         WithdrawalQueue._withdraw(_sender, _receiver, _amount);
     }
 
@@ -342,29 +354,29 @@ contract CorePrimary is
         uint256 _value = _approveMax ? type(uint256).max : _amount;
 
         // Call the permit function of the token contract
-        DETH.permit(msg.sender, address(this), _value, _deadline, _v, _r, _s);
+        AETH.permit(msg.sender, address(this), _value, _deadline, _v, _r, _s);
 
         // Withdraw the specified amount of tokens
         _withdraw(msg.sender, _receiver, _amount);
     }
 
     /**
-     * @notice Redeems a specified amount of sdETH and withdraws the underlying ETH.
-     * @param _sdETHAmount The amount of sdETH to redeem.
+     * @notice Redeems a specified amount of saETH and withdraws the underlying ETH.
+     * @param _saETHAmount The amount of saETH to redeem.
      */
-    function redeemAndWithdraw(uint256 _sdETHAmount) external {
+    function redeemAndWithdraw(uint256 _saETHAmount) external {
         address _sender = msg.sender;
-        uint256 _amount = SDETH.redeem(_sdETHAmount, address(this), _sender);
+        uint256 _amount = SAETH.redeem(_saETHAmount, address(this), _sender);
         _withdraw(address(this), _sender, _amount);
     }
 
     /**
-     * @notice Withdraws a specified amount of underlying ETH and sdETH.
+     * @notice Withdraws a specified amount of underlying ETH and saETH.
      * @param _amount The amount of underlying ETH to withdraw.
      */
     function redeemUnderlyingAndWithdraw(uint256 _amount) external {
         address _sender = msg.sender;
-        SDETH.withdraw(_amount, address(this), _sender);
+        SAETH.withdraw(_amount, address(this), _sender);
         _withdraw(address(this), _sender, _amount);
     }
 

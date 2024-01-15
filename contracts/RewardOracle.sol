@@ -7,7 +7,7 @@ import "./library/PauseGuardian.sol";
 import "./library/Manable.sol";
 
 import "./interface/ICore.sol";
-import "./interface/IdETH.sol";
+import "./interface/IaETH.sol";
 
 /**
  * @title Aspida's ETH 2.0 staking reward oracle
@@ -72,6 +72,7 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
     function initialize() public initializer {
         __Ownable2Step_init();
         _setInterestRateLimitPerEpoch(BASE);
+        lastEpochId_ = _currentEpochId();
     }
 
     /**
@@ -171,18 +172,6 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
     }
 
     /**
-     * @notice Recap the loss(Slashing and strategy losses).
-     * @param _loss The amount of loss
-     *
-     * Requirements:
-     * - the caller must be `owner`.
-     */
-    function _recapLoss(uint256 _loss) external onlyOwner {
-        // Burn the loss from the treasury
-        IdETH(CORE.dETH()).burnFrom(CORE.treasury(), _loss);
-    }
-
-    /**
      * @notice Calculate the current epoch ID.
      * @return The current epoch ID.
      */
@@ -209,7 +198,8 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
 
     /**
      * @notice Update the epoch reward.
-     * @param _epochId The epoch ID
+     * @param _startEpochId The starting epoch ID
+     * @param _epochId The current epoch ID
      * @param _activatedValidatorCount The number of activated validators
      * @param _rewardIncrement The reward increment
      *
@@ -219,11 +209,17 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
      * - the epoch interest rate must be valid.
      * - the validator limit must not be exceeded.
      */
-    function _updateEpochReward(uint256 _epochId, uint256 _activatedValidatorCount, uint256 _rewardIncrement) internal {
+    function _updateEpochReward(
+        uint256 _startEpochId,
+        uint256 _epochId,
+        uint256 _activatedValidatorCount,
+        uint256 _rewardIncrement
+    ) internal {
         require(_activatedValidatorCount > 0, "_updateEpochReward: Active validators must not be 0");
         require(_epochId <= _currentEpochId(), "_updateEpochReward: Invalid epoch id");
 
         uint256 _lastEpochId = lastEpochId_;
+        require(_startEpochId == _lastEpochId, "_updateEpochReward: Start epoch id must equal last epoch id");
         require(_epochId > _lastEpochId, "_updateEpochReward: Epoch id must increase");
 
         uint256 _epochCount = _epochId - _lastEpochId;
@@ -256,20 +252,22 @@ contract RewardOracle is Ownable2StepUpgradeable, PauseGuardian, Manable {
 
     /**
      * @notice Submit the epoch reward.
-     * @param _epochId The epoch ID
+     * @param _startEpochId The starting epoch ID
+     * @param _epochId The current epoch ID
      * @param _activatedValidatorCount The number of activated validators
      * @param _rewardIncrement The reward increment
      *
      * Requirements:
-     * - the caller must be the `manager`.
+     * - the function caller must be the `manager`.
      * - the contract must not be paused.
      */
     function submitEpochReward(
+        uint256 _startEpochId,
         uint256 _epochId,
         uint256 _activatedValidatorCount,
         uint256 _rewardIncrement
     ) external whenNotPaused onlyManager {
-        _updateEpochReward(_epochId, _activatedValidatorCount, _rewardIncrement);
+        _updateEpochReward(_startEpochId, _epochId, _activatedValidatorCount, _rewardIncrement);
         CORE.supplyReward(_rewardIncrement);
     }
 

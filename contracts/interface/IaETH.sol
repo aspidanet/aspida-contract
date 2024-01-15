@@ -4,7 +4,7 @@ pragma solidity 0.8.10;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-IERC20PermitUpgradeable.sol";
 
-interface IdETH is IERC20Upgradeable, IERC20PermitUpgradeable {
+interface IaETH is IERC20Upgradeable, IERC20PermitUpgradeable {
     function mint(address _receiver, uint256 _amount) external;
 
     function burn(uint256 _amount) external;

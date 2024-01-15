@@ -10,7 +10,7 @@ describe("Test StETHMinter unit test", () => {
     let pauseGuardian: Signer;
     let accounts: Signer[];
 
-    let dETH: Contract;
+    let aETH: Contract;
     let MockstETH: Contract;
     let StETHMinter: Contract;
 
@@ -20,11 +20,11 @@ describe("Test StETHMinter unit test", () => {
         manager = initData.manager;
         pauseGuardian = initData.pauseGuardian;
         accounts = initData.accounts;
-        dETH = initData.dETH;
+        aETH = initData.aETH;
         MockstETH = initData.MockstETH;
         StETHMinter = initData.StETHMinter;
 
-        expect(await StETHMinter.dETH()).to.be.equal(dETH.address);
+        expect(await StETHMinter.aETH()).to.be.equal(aETH.address);
         expect(await StETHMinter.depositAsset()).to.be.equal(MockstETH.address);
     }
 
@@ -62,7 +62,7 @@ describe("Test StETHMinter unit test", () => {
         );
     });
 
-    it("test deposit(uint256,address): Balance and allowance are sufficient, insufficient dETH capacity, expected revert", async () => {
+    it("test deposit(uint256,address): Balance and allowance are sufficient, insufficient aETH capacity, expected revert", async () => {
         const sender = accounts[0];
         const senderAddr = await sender.getAddress();
         const receiver = senderAddr;
@@ -80,7 +80,7 @@ describe("Test StETHMinter unit test", () => {
         );
     });
 
-    it("test deposit(uint256,address): Balance and allowance are sufficient, sufficient dETH capacity, success", async () => {
+    it("test deposit(uint256,address): Balance and allowance are sufficient, sufficient aETH capacity, success", async () => {
         const sender = accounts[0];
         const senderAddr = await sender.getAddress();
         const receiver = senderAddr;
@@ -92,10 +92,10 @@ describe("Test StETHMinter unit test", () => {
         await MockstETH.connect(sender).approve(StETHMinter.address, amount);
         expect(await MockstETH.allowance(senderAddr, StETHMinter.address)).to.be.gte(amount);
 
-        await dETH._setMinterCap(StETHMinter.address, amount.mul(100));
-        const senderBalance = await dETH.balanceOf(senderAddr);
-        const receiverBalance = await dETH.balanceOf(receiver);
-        const totalSupply = await dETH.totalSupply();
+        await aETH._setMinterCap(StETHMinter.address, amount.mul(100));
+        const senderBalance = await aETH.balanceOf(senderAddr);
+        const receiverBalance = await aETH.balanceOf(receiver);
+        const totalSupply = await aETH.totalSupply();
         const depositCap = await StETHMinter.depositCap();
         const depositAmount = await StETHMinter.depositAmount();
         expect(depositCap.sub(depositAmount)).to.be.gte(amount);
@@ -105,11 +105,11 @@ describe("Test StETHMinter unit test", () => {
             [await StETHMinter.receiver(), senderAddr],
             [amount, amount.mul(NegativeOne)]
         );
-        const dETHAmount = await StETHMinter.convertToDETH(amount);
-        expect(await dETH.balanceOf(senderAddr)).to.be.gte(senderBalance.add(dETHAmount));
-        expect(await dETH.balanceOf(receiver)).to.be.gte(receiverBalance.add(dETHAmount));
-        expect(await dETH.totalSupply()).to.be.gte(totalSupply.add(dETHAmount));
-        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(dETHAmount));
+        const aETHAmount = await StETHMinter.convertToAETH(amount);
+        expect(await aETH.balanceOf(senderAddr)).to.be.gte(senderBalance.add(aETHAmount));
+        expect(await aETH.balanceOf(receiver)).to.be.gte(receiverBalance.add(aETHAmount));
+        expect(await aETH.totalSupply()).to.be.gte(totalSupply.add(aETHAmount));
+        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(aETHAmount));
         expect(await StETHMinter.depositCap()).to.be.gte(depositCap);
     });
 
@@ -126,9 +126,9 @@ describe("Test StETHMinter unit test", () => {
         await MockstETH.connect(sender).approve(StETHMinter.address, amount);
         expect(await MockstETH.allowance(senderAddr, StETHMinter.address)).to.be.gte(amount);
 
-        const senderBalance = await dETH.balanceOf(senderAddr);
-        const receiverBalance = await dETH.balanceOf(receiver);
-        const totalSupply = await dETH.totalSupply();
+        const senderBalance = await aETH.balanceOf(senderAddr);
+        const receiverBalance = await aETH.balanceOf(receiver);
+        const totalSupply = await aETH.totalSupply();
         const depositCap = await StETHMinter.depositCap();
         const depositAmount = await StETHMinter.depositAmount();
         expect(depositCap.sub(depositAmount)).to.be.gte(amount);
@@ -138,15 +138,15 @@ describe("Test StETHMinter unit test", () => {
             [await StETHMinter.receiver(), senderAddr],
             [amount, amount.mul(NegativeOne)]
         );
-        const dETHAmount = await StETHMinter.convertToDETH(amount);
-        expect(await dETH.balanceOf(senderAddr)).to.be.gte(senderBalance);
-        expect(await dETH.balanceOf(receiver)).to.be.gte(receiverBalance.add(dETHAmount));
-        expect(await dETH.totalSupply()).to.be.gte(totalSupply.add(dETHAmount));
-        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(dETHAmount));
+        const aETHAmount = await StETHMinter.convertToAETH(amount);
+        expect(await aETH.balanceOf(senderAddr)).to.be.gte(senderBalance);
+        expect(await aETH.balanceOf(receiver)).to.be.gte(receiverBalance.add(aETHAmount));
+        expect(await aETH.totalSupply()).to.be.gte(totalSupply.add(aETHAmount));
+        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(aETHAmount));
         expect(await StETHMinter.depositCap()).to.be.gte(depositCap);
     });
 
-    it("test deposit(uint256): Balance and allowance are sufficient, sufficient dETH capacity, success", async () => {
+    it("test deposit(uint256): Balance and allowance are sufficient, sufficient aETH capacity, success", async () => {
         const sender = accounts[0];
         const senderAddr = await sender.getAddress();
         const amount = Ether;
@@ -158,8 +158,8 @@ describe("Test StETHMinter unit test", () => {
         await MockstETH.connect(sender).approve(StETHMinter.address, amount);
         expect(await MockstETH.allowance(senderAddr, StETHMinter.address)).to.be.gte(amount);
 
-        const senderBalance = await dETH.balanceOf(senderAddr);
-        const totalSupply = await dETH.totalSupply();
+        const senderBalance = await aETH.balanceOf(senderAddr);
+        const totalSupply = await aETH.totalSupply();
         const depositCap = await StETHMinter.depositCap();
         const depositAmount = await StETHMinter.depositAmount();
         expect(depositCap.sub(depositAmount)).to.be.gte(amount);
@@ -169,10 +169,10 @@ describe("Test StETHMinter unit test", () => {
             [await StETHMinter.receiver(), senderAddr],
             [amount, amount.mul(NegativeOne)]
         );
-        const dETHAmount = await StETHMinter.convertToDETH(amount);
-        expect(await dETH.balanceOf(senderAddr)).to.be.gte(senderBalance.add(dETHAmount));
-        expect(await dETH.totalSupply()).to.be.gte(totalSupply.add(dETHAmount));
-        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(dETHAmount));
+        const aETHAmount = await StETHMinter.convertToAETH(amount);
+        expect(await aETH.balanceOf(senderAddr)).to.be.gte(senderBalance.add(aETHAmount));
+        expect(await aETH.totalSupply()).to.be.gte(totalSupply.add(aETHAmount));
+        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(aETHAmount));
         expect(await StETHMinter.depositCap()).to.be.gte(depositCap);
     });
 
@@ -189,9 +189,9 @@ describe("Test StETHMinter unit test", () => {
         await MockstETH.connect(sender).approve(StETHMinter.address, amount);
         expect(await MockstETH.allowance(senderAddr, StETHMinter.address)).to.be.gte(amount);
 
-        const senderBalance = await dETH.balanceOf(senderAddr);
-        const receiverBalance = await dETH.balanceOf(receiver);
-        const totalSupply = await dETH.totalSupply();
+        const senderBalance = await aETH.balanceOf(senderAddr);
+        const receiverBalance = await aETH.balanceOf(receiver);
+        const totalSupply = await aETH.totalSupply();
         const depositCap = await StETHMinter.depositCap();
         const depositAmount = await StETHMinter.depositAmount();
         expect(depositCap.sub(depositAmount)).to.be.gte(amount);
@@ -202,11 +202,11 @@ describe("Test StETHMinter unit test", () => {
         await expect(StETHMinter.connect(sender)["deposit(uint256,address)"](amount, receiver)).to.be.revertedWith(
             "Pausable: paused"
         );
-        const dETHAmount = await StETHMinter.convertToDETH(ZERO);
-        expect(await dETH.balanceOf(senderAddr)).to.be.gte(senderBalance.add(dETHAmount));
-        expect(await dETH.balanceOf(receiver)).to.be.gte(receiverBalance.add(dETHAmount));
-        expect(await dETH.totalSupply()).to.be.gte(totalSupply.add(dETHAmount));
-        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(dETHAmount));
+        const aETHAmount = await StETHMinter.convertToAETH(ZERO);
+        expect(await aETH.balanceOf(senderAddr)).to.be.gte(senderBalance.add(aETHAmount));
+        expect(await aETH.balanceOf(receiver)).to.be.gte(receiverBalance.add(aETHAmount));
+        expect(await aETH.totalSupply()).to.be.gte(totalSupply.add(aETHAmount));
+        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(aETHAmount));
         expect(await StETHMinter.depositCap()).to.be.gte(depositCap);
     });
 
@@ -222,8 +222,8 @@ describe("Test StETHMinter unit test", () => {
         await MockstETH.connect(sender).approve(StETHMinter.address, amount);
         expect(await MockstETH.allowance(senderAddr, StETHMinter.address)).to.be.gte(amount);
 
-        const senderBalance = await dETH.balanceOf(senderAddr);
-        const totalSupply = await dETH.totalSupply();
+        const senderBalance = await aETH.balanceOf(senderAddr);
+        const totalSupply = await aETH.totalSupply();
         const depositCap = await StETHMinter.depositCap();
         const depositAmount = await StETHMinter.depositAmount();
         expect(depositCap.sub(depositAmount)).to.be.gte(amount);
@@ -231,10 +231,10 @@ describe("Test StETHMinter unit test", () => {
         expect(await StETHMinter.paused()).to.be.equal(true);
 
         await expect(StETHMinter.connect(sender)["deposit(uint256)"](amount)).to.be.revertedWith("Pausable: paused");
-        const dETHAmount = await StETHMinter.convertToDETH(ZERO);
-        expect(await dETH.balanceOf(senderAddr)).to.be.gte(senderBalance.add(dETHAmount));
-        expect(await dETH.totalSupply()).to.be.gte(totalSupply.add(dETHAmount));
-        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(dETHAmount));
+        const aETHAmount = await StETHMinter.convertToAETH(ZERO);
+        expect(await aETH.balanceOf(senderAddr)).to.be.gte(senderBalance.add(aETHAmount));
+        expect(await aETH.totalSupply()).to.be.gte(totalSupply.add(aETHAmount));
+        expect(await StETHMinter.depositAmount()).to.be.gte(depositAmount.add(aETHAmount));
         expect(await StETHMinter.depositCap()).to.be.gte(depositCap);
     });
     // it("test deposit(uint256,address): Not approved, expected revert", async () => {

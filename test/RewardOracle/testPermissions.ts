@@ -1,9 +1,10 @@
-import { Signer, Contract } from "ethers";
+import { Signer, Contract, BigNumber, utils } from "ethers";
 import { expect } from "chai";
 
 import { fixtureDefault } from "../utils/fixtures";
 
 import { MAX, ZERO, ONE, TWO, NegativeOne, Ether, AddressZero, AbiCoder } from "../utils/constants";
+import { getCurrentTime, mineManually } from "../utils/helper";
 
 import { LibraryTestData, testManable, testPauseGuardian } from "../Library/testLibrary";
 
@@ -18,7 +19,7 @@ describe("Test RewardOracle permissions", () => {
     let pauseGuardian: Signer;
     let accounts: Signer[];
 
-    let dETH: Contract;
+    let aETH: Contract;
     let CorePrimary: Contract;
     let RewardOracle: Contract;
 
@@ -30,7 +31,7 @@ describe("Test RewardOracle permissions", () => {
         manager = initData.manager;
         pauseGuardian = initData.pauseGuardian;
         accounts = initData.accounts;
-        dETH = initData.dETH;
+        aETH = initData.aETH;
         CorePrimary = initData.CorePrimary;
         RewardOracle = initData.RewardOracle;
 
@@ -41,6 +42,18 @@ describe("Test RewardOracle permissions", () => {
             accounts: accounts,
             contract: RewardOracle,
         };
+    }
+
+    async function forward(epochId: BigNumber) {
+        const epochIdTimestamp = epochId
+            .mul(SECONDS_PER_SLOT)
+            .mul(SLOT_PER_EPOCH)
+            .add(await RewardOracle.zeroEpochTimestamp());
+        const timestamp = utils.parseUnits((await getCurrentTime()).toString(), 0);
+        if (epochIdTimestamp.gt(timestamp)) {
+            const increaseTime = epochIdTimestamp.sub(timestamp);
+            await mineManually(1, Number(increaseTime.toString()));
+        }
     }
 
     before(async function () {
@@ -133,64 +146,64 @@ describe("Test RewardOracle permissions", () => {
         expect(validatorLimitPerEpoch).to.be.equal(await RewardOracle.validatorLimitPerEpoch());
     });
 
-    it("test _recapLoss: Not owner, expected revert", async () => {
-        const sender = accounts[0];
+    // it("test _recapLoss: Not owner, expected revert", async () => {
+    //     const sender = accounts[0];
 
-        await expect(RewardOracle.connect(sender)._recapLoss(Ether)).to.be.revertedWith(
-            "Ownable: caller is not the owner"
-        );
-    });
+    //     await expect(RewardOracle.connect(sender)._recapLoss(Ether)).to.be.revertedWith(
+    //         "Ownable: caller is not the owner"
+    //     );
+    // });
 
-    it("test _recapLoss: is owner, insufficient balance, expected revert", async () => {
-        const sender = owner;
+    // it("test _recapLoss: is owner, insufficient balance, expected revert", async () => {
+    //     const sender = owner;
 
-        const treasury = await CorePrimary.treasury();
-        expect(await sender.getAddress()).to.be.equal(treasury);
+    //     const treasury = await CorePrimary.treasury();
+    //     expect(await sender.getAddress()).to.be.equal(treasury);
 
-        await dETH.connect(sender).approve(RewardOracle.address, MAX);
+    //     await aETH.connect(sender).approve(RewardOracle.address, MAX);
 
-        const income = await dETH.balanceOf(treasury);
-        const loss = income.add(ONE);
+    //     const income = await aETH.balanceOf(treasury);
+    //     const loss = income.add(ONE);
 
-        await expect(RewardOracle.connect(sender)._recapLoss(loss)).to.be.revertedWith(
-            "ERC20: burn amount exceeds balance"
-        );
-    });
+    //     await expect(RewardOracle.connect(sender)._recapLoss(loss)).to.be.revertedWith(
+    //         "ERC20: burn amount exceeds balance"
+    //     );
+    // });
 
-    it("test _recapLoss: is owner, insufficient allowance, expected revert", async () => {
-        const sender = owner;
+    // it("test _recapLoss: is owner, insufficient allowance, expected revert", async () => {
+    //     const sender = owner;
 
-        const treasury = await CorePrimary.treasury();
-        expect(await sender.getAddress()).to.be.equal(treasury);
+    //     const treasury = await CorePrimary.treasury();
+    //     expect(await sender.getAddress()).to.be.equal(treasury);
 
-        const income = Ether;
-        await dETH.connect(manager).mint(treasury, income);
+    //     const income = Ether;
+    //     await aETH.connect(manager).mint(treasury, income);
 
-        const loss = income;
+    //     const loss = income;
 
-        await dETH.connect(sender).approve(RewardOracle.address, loss.sub(ONE));
+    //     await aETH.connect(sender).approve(RewardOracle.address, loss.sub(ONE));
 
-        await expect(RewardOracle.connect(sender)._recapLoss(loss)).to.be.revertedWith("ERC20: insufficient allowance");
-    });
+    //     await expect(RewardOracle.connect(sender)._recapLoss(loss)).to.be.revertedWith("ERC20: insufficient allowance");
+    // });
 
-    it("test _recapLoss: is owner, success", async () => {
-        const sender = owner;
+    // it("test _recapLoss: is owner, success", async () => {
+    //     const sender = owner;
 
-        const treasury = await CorePrimary.treasury();
-        expect(await sender.getAddress()).to.be.equal(treasury);
+    //     const treasury = await CorePrimary.treasury();
+    //     expect(await sender.getAddress()).to.be.equal(treasury);
 
-        await dETH.connect(sender).approve(RewardOracle.address, MAX);
+    //     await aETH.connect(sender).approve(RewardOracle.address, MAX);
 
-        const income = await dETH.balanceOf(treasury);
+    //     const income = await aETH.balanceOf(treasury);
 
-        const loss = income;
+    //     const loss = income;
 
-        await expect(RewardOracle.connect(sender)._recapLoss(loss)).changeTokenBalances(
-            dETH,
-            [RewardOracle.address, treasury],
-            [ZERO, loss.mul(NegativeOne)]
-        );
-    });
+    //     await expect(RewardOracle.connect(sender)._recapLoss(loss)).changeTokenBalances(
+    //         aETH,
+    //         [RewardOracle.address, treasury],
+    //         [ZERO, loss.mul(NegativeOne)]
+    //     );
+    // });
 
     it("test submitEpochReward: is manager, paused, expected revert", async () => {
         const sender = manager;
@@ -200,12 +213,19 @@ describe("Test RewardOracle permissions", () => {
         await RewardOracle._close();
         expect(await RewardOracle.paused()).to.be.equal(true);
 
-        const epochId = ONE;
+        const startEpochId = await RewardOracle.lastEpochId();
+        const epochId = startEpochId.add(ONE);
         const activatedValidatorCount = TWO;
         const rewardIncrement = Ether;
 
+        await forward(epochId);
         await expect(
-            RewardOracle.connect(sender).submitEpochReward(epochId, activatedValidatorCount, rewardIncrement)
+            RewardOracle.connect(sender).submitEpochReward(
+                startEpochId,
+                epochId,
+                activatedValidatorCount,
+                rewardIncrement
+            )
         ).to.be.revertedWith("Pausable: paused");
     });
 
@@ -218,12 +238,19 @@ describe("Test RewardOracle permissions", () => {
         await RewardOracle._open();
         expect(await RewardOracle.paused()).to.be.equal(false);
 
-        const epochId = ONE;
+        const startEpochId = await RewardOracle.lastEpochId();
+        const epochId = startEpochId.add(ONE);
         const activatedValidatorCount = TWO;
         const rewardIncrement = Ether;
 
+        await forward(epochId);
         await expect(
-            RewardOracle.connect(sender).submitEpochReward(epochId, activatedValidatorCount, rewardIncrement)
+            RewardOracle.connect(sender).submitEpochReward(
+                startEpochId,
+                epochId,
+                activatedValidatorCount,
+                rewardIncrement
+            )
         ).to.be.revertedWith("onlyManager: caller is not manager");
     });
 

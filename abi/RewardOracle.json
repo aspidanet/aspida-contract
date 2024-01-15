@@ -250,19 +250,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_loss",
-        "type": "uint256"
-      }
-    ],
-    "name": "_recapLoss",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "_manager",
         "type": "address"
@@ -503,6 +490,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_startEpochId",
+        "type": "uint256"
+      },
       {
         "internalType": "uint256",
         "name": "_epochId",

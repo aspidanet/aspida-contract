@@ -169,6 +169,19 @@
   },
   {
     "inputs": [],
+    "name": "aETH",
+    "outputs": [
+      {
+        "internalType": "contract IaETH",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "acceptOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -187,19 +200,6 @@
     "outputs": [
       {
         "internalType": "contract ICore",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "dETH",
-    "outputs": [
-      {
-        "internalType": "contract IdETH",
         "name": "",
         "type": "address"
       }

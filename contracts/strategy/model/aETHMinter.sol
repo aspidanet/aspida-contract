@@ -5,20 +5,20 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "../../library/TransferHelper.sol";
 
-import "../../interface/IdETH.sol";
+import "../../interface/IaETH.sol";
 
 /**
- * @title Aspida's lido's dETH minter model
+ * @title Aspida's lido's aETH minter model
  * @author Aspida engineer
- * @dev This contract is used to mint dETH tokens by depositing assets
+ * @dev This contract is used to mint aETH tokens by depositing assets
  * @dev The contract is abstract and must be inherited by a child contract
- * @dev The child contract must implement the _convertToDETH and _depositAsset functions
+ * @dev The child contract must implement the _convertToAETH and _depositAsset functions
  * @dev The child contract must also call the _setReceiverInternal function to set the receiver address
  */
-abstract contract dETHMinter {
+abstract contract aETHMinter {
     using TransferHelper for address;
 
-    IdETH internal immutable DETH;
+    IaETH internal immutable AETH;
 
     address internal receiver_; //internal variable to store the receiver address
 
@@ -27,8 +27,8 @@ abstract contract dETHMinter {
      */
     event SetReceiver(address receiver);
 
-    constructor(IdETH _dETH) {
-        DETH = _dETH;
+    constructor(IaETH _aETH) {
+        AETH = _aETH;
     }
 
     /**
@@ -42,7 +42,7 @@ abstract contract dETHMinter {
     }
 
     /**
-     * @dev Internal function to deposit assets and mint dETH tokens
+     * @dev Internal function to deposit assets and mint aETH tokens
      * @param _sender The address of the sender
      * @param _receiver The address of the receiver
      * @param _assetAmount The amount of assets to deposit
@@ -53,15 +53,15 @@ abstract contract dETHMinter {
         uint256 _beforeBalance = IERC20Upgradeable(_asset).balanceOf(_to);
 
         _asset.safeTransferFrom(_sender, _to, _assetAmount);
-        DETH.minterMint(_receiver, _convertToDETH(IERC20Upgradeable(_asset).balanceOf(_to) - _beforeBalance));
+        AETH.minterMint(_receiver, _convertToAETH(IERC20Upgradeable(_asset).balanceOf(_to) - _beforeBalance));
     }
 
     /**
-     * @dev Internal function to convert the deposit asset amount to dETH tokens
+     * @dev Internal function to convert the deposit asset amount to aETH tokens
      * @param _assetAmount The amount of the deposit asset
-     * @return The amount of dETH tokens to mint
+     * @return The amount of aETH tokens to mint
      */
-    function _convertToDETH(uint256 _assetAmount) internal view virtual returns (uint256);
+    function _convertToAETH(uint256 _assetAmount) internal view virtual returns (uint256);
 
     /**
      * @dev Internal function to get the deposit asset address
@@ -70,7 +70,7 @@ abstract contract dETHMinter {
     function _depositAsset() internal view virtual returns (address);
 
     /**
-     * @dev External function to deposit assets and mint dETH tokens
+     * @dev External function to deposit assets and mint aETH tokens
      * @param _assetAmount The amount of assets to deposit
      */
     function deposit(uint256 _assetAmount) external {
@@ -78,7 +78,7 @@ abstract contract dETHMinter {
     }
 
     /**
-     * @dev External function to deposit assets and mint dETH tokens
+     * @dev External function to deposit assets and mint aETH tokens
      * @param _assetAmount The amount of assets to deposit
      * @param _receiver The address of the receiver
      */
@@ -87,11 +87,11 @@ abstract contract dETHMinter {
     }
 
     /**
-     * @dev External function to get the DETH token contract address
-     * @return The address of the DETH token contract
+     * @dev External function to get the AETH token contract address
+     * @return The address of the AETH token contract
      */
-    function dETH() external view returns (IdETH) {
-        return DETH;
+    function aETH() external view returns (IaETH) {
+        return AETH;
     }
 
     /**
@@ -111,11 +111,11 @@ abstract contract dETHMinter {
     }
 
     /**
-     * @dev External function to convert the deposit asset amount to dETH tokens
+     * @dev External function to convert the deposit asset amount to aETH tokens
      * @param _assetAmount The amount of the deposit asset
-     * @return The amount of dETH tokens to mint
+     * @return The amount of aETH tokens to mint
      */
-    function convertToDETH(uint256 _assetAmount) external view returns (uint256) {
-        return _convertToDETH(_assetAmount);
+    function convertToAETH(uint256 _assetAmount) external view returns (uint256) {
+        return _convertToAETH(_assetAmount);
     }
 }

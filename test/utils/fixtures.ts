@@ -44,15 +44,15 @@ export async function fixtureDefault() {
     // Deploy DepositContract contract
     const DepositContract: Contract = await deployContract("DepositContract", []);
 
-    const { contract: dETH } = await deployProxy("dETH", [], "initialize(string,string)", ["Aspida Ether", "dETH"]);
-    const { contract: sdETH } = await deployProxy("sdETH", [], "initialize(string,string,address)", [
+    const { contract: aETH } = await deployProxy("aETH", [], "initialize(string,string)", ["Aspida Ether", "aETH"]);
+    const { contract: saETH } = await deployProxy("saETH", [], "initialize(string,string,address)", [
         "Aspida Stake Ether",
-        "sdETH",
-        dETH.address,
+        "saETH",
+        aETH.address,
     ]);
     const { contract: CorePrimary } = await deployProxy(
         "CorePrimary",
-        [DepositContract.address, dETH.address, sdETH.address],
+        [DepositContract.address, aETH.address, saETH.address],
         "initialize()",
         []
     );
@@ -67,16 +67,16 @@ export async function fixtureDefault() {
     const { contract: MockstETH } = await deployProxy("MockstETH", [], "initialize()", []);
     const { contract: StETHMinter } = await deployProxy(
         "StETHMinter",
-        [dETH.address, MockstETH.address],
+        [aETH.address, MockstETH.address],
         "initialize()",
         []
     );
 
-    await dETH._addPauseGuardian(pauseGuardianAddr);
-    await dETH._addManager(CorePrimary.address);
-    await dETH._addManager(managerAddr);
+    await aETH._addPauseGuardian(pauseGuardianAddr);
+    await aETH._addManager(CorePrimary.address);
+    await aETH._addManager(managerAddr);
 
-    await sdETH._addPauseGuardian(pauseGuardianAddr);
+    await saETH._addPauseGuardian(pauseGuardianAddr);
 
     await CorePrimary._addPauseGuardian(pauseGuardianAddr);
     await CorePrimary._addManager(managerAddr);
@@ -95,8 +95,8 @@ export async function fixtureDefault() {
         pauseGuardian,
         accounts,
         DepositContract,
-        dETH,
-        sdETH,
+        aETH,
+        saETH,
         CorePrimary,
         RewardOracle,
         MockstETH,

@@ -5,13 +5,13 @@ import { fixtureDefault } from "../utils/fixtures";
 
 import { LibraryTestData, testManable, testPauseGuardian, testMinter } from "../Library/testLibrary";
 
-describe("Test dETH permissions", () => {
+describe("Test aETH permissions", () => {
     let owner: Signer;
     let manager: Signer;
     let pauseGuardian: Signer;
     let accounts: Signer[];
 
-    let dETH: Contract;
+    let aETH: Contract;
     let libraryTestData: LibraryTestData;
 
     async function init() {
@@ -20,14 +20,14 @@ describe("Test dETH permissions", () => {
         manager = initData.manager;
         pauseGuardian = initData.pauseGuardian;
         accounts = initData.accounts;
-        dETH = initData.dETH;
+        aETH = initData.aETH;
 
         libraryTestData = {
             owner: owner,
             manager: manager,
             pauseGuardian: pauseGuardian,
             accounts: accounts,
-            contract: dETH,
+            contract: aETH,
         };
     }
 
@@ -36,20 +36,20 @@ describe("Test dETH permissions", () => {
     });
 
     it("test initialize: Already initialized, expected revert", async () => {
-        await expect(dETH.initialize("Aspida Ether", "dETH")).to.be.revertedWith(
+        await expect(aETH.initialize("Aspida Ether", "aETH")).to.be.revertedWith(
             "Initializable: contract is already initialized"
         );
     });
 
     it("test testManable, success", async () => {
-        await testManable(libraryTestData, "dETH");
+        await testManable(libraryTestData, "aETH");
     });
 
     it("test testPauseGuardian, success", async () => {
-        await testPauseGuardian(libraryTestData, "dETH");
+        await testPauseGuardian(libraryTestData, "aETH");
     });
 
     it("test testMinter, success", async () => {
-        await testMinter(libraryTestData, "dETH");
+        await testMinter(libraryTestData, "aETH");
     });
 });

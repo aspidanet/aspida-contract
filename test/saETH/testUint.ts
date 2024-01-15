@@ -19,7 +19,7 @@ import {
 } from "../utils/constants";
 import { randomRange } from "../utils/helper";
 
-import { ActionTestData, UserState, Action, getState, getUserState, executeAndCalcExpected } from "./sdETH";
+import { ActionTestData, UserState, Action, getState, getUserState, executeAndCalcExpected } from "./saETH";
 import {
     testDepositRevert,
     testDeposit,
@@ -32,15 +32,15 @@ import {
     testExtractAll,
 } from "./action";
 
-describe("Test sdETH unit test", () => {
+describe("Test saETH unit test", () => {
     let initData: ActionTestData;
     let owner: Signer;
     let manager: Signer;
     let pauseGuardian: Signer;
     let accounts: Signer[];
 
-    let dETH: Contract;
-    let sdETH: Contract;
+    let aETH: Contract;
+    let saETH: Contract;
 
     async function init() {
         initData = await fixtureDefault();
@@ -48,10 +48,10 @@ describe("Test sdETH unit test", () => {
         manager = initData.manager;
         pauseGuardian = initData.pauseGuardian;
         accounts = initData.accounts;
-        dETH = initData.dETH;
-        sdETH = initData.sdETH;
+        aETH = initData.aETH;
+        saETH = initData.saETH;
 
-        await dETH._addManager(await owner.getAddress());
+        await aETH._addManager(await owner.getAddress());
     }
 
     before(async function () {
@@ -59,8 +59,8 @@ describe("Test sdETH unit test", () => {
         const mintAmount = utils.parseEther("100000000");
         for (let index = 0; index < accounts.length; index++) {
             const accountAddr = await accounts[index].getAddress();
-            await dETH.mint(accountAddr, mintAmount);
-            await dETH.connect(accounts[index]).approve(sdETH.address, MAX);
+            await aETH.mint(accountAddr, mintAmount);
+            await aETH.connect(accounts[index]).approve(saETH.address, MAX);
         }
     });
 
@@ -197,4 +197,8 @@ describe("Test sdETH unit test", () => {
             await actions[randomRange(0, actions.length)](initData, intervention, content);
         });
     }
+
+    it("test deposit: first rewardRate = 0", async () => {
+        await testDeposit(initData, {}, "first rewardRate = 0");
+    });
 });

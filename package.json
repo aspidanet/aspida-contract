@@ -19,10 +19,15 @@
     "hardhat": "^2.14.0"
   },
   "dependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
-    "@nomiclabs/hardhat-etherscan": "^3.1.7",
+    "@layerzerolabs/solidity-examples": "^1.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.6",
+    "@openzeppelin/contracts": "^4.9.3",
+    "@openzeppelin/contracts-upgradeable": "^4.9.3",
     "dotenv": "^16.0.3",
     "hardhat-abi-exporter": "^2.10.1",
+    "hardhat-deploy": "^0.11.34",
+    "hardhat-storage-layout": "^0.1.7",
     "prettier-plugin-solidity": "^1.1.3"
   }
 }
